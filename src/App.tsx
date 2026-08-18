@@ -209,7 +209,7 @@ function App() {
 
         <Footer contact={siteContact} onNavigate={navigate} />
 
-        <CartDrawer onCheckout={() => navigate('contact')} />
+        <CartDrawer whatsappPhone={siteContact.phone} />
         <ProductModal
           product={selectedProduct}
           onClose={() => setSelectedProduct(null)}

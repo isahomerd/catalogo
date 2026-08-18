@@ -1,12 +1,58 @@
-import { X, Plus, Minus, Trash2, ShoppingBag } from 'lucide-react';
+import { X, Plus, Minus, Trash2, ShoppingBag, MessageCircle } from 'lucide-react';
 import { useCart } from '../cart';
+import type { CartItem } from '../types';
 
 interface CartDrawerProps {
-  onCheckout: () => void;
+  whatsappPhone: string;
 }
 
-export default function CartDrawer({ onCheckout }: CartDrawerProps) {
+const formatCurrency = (amount: number) => `€${amount.toFixed(2)}`;
+
+function formatWhatsAppPhone(phone: string) {
+  const digits = phone.replace(/\D/g, '');
+  return digits.startsWith('00') ? digits.slice(2) : digits;
+}
+
+function buildWhatsAppMessage(items: CartItem[], totalPrice: number) {
+  const lines = items.map((item, index) => {
+    const unitPrice = formatCurrency(item.product.price);
+    const lineTotal = formatCurrency(item.product.price * item.quantity);
+
+    return [
+      `${index + 1}. *${item.product.name}*`,
+      `   Cantidad: ${item.quantity}`,
+      `   Color: ${item.selectedColor}`,
+      `   Precio unitario: ${unitPrice}`,
+      `   Subtotal: ${lineTotal}`,
+    ].join('\n');
+  });
+
+  return [
+    '*Nuevo pedido - Isa Home*',
+    '',
+    'Hola, me gustaría realizar este pedido:',
+    '',
+    '*Productos*',
+    ...lines,
+    '',
+    `*Total estimado:* ${formatCurrency(totalPrice)}`,
+    '',
+    'Quedo atento/a para confirmar disponibilidad, método de pago y detalles de entrega.',
+    'Gracias.',
+  ].join('\n');
+}
+
+export default function CartDrawer({ whatsappPhone }: CartDrawerProps) {
   const { items, isOpen, closeCart, updateQuantity, removeFromCart, totalPrice, totalItems } = useCart();
+  const whatsappNumber = formatWhatsAppPhone(whatsappPhone);
+
+  const handleWhatsAppCheckout = () => {
+    if (!whatsappNumber) return;
+
+    const message = buildWhatsAppMessage(items, totalPrice);
+    const url = `https://wa.me/${whatsappNumber}?text=${encodeURIComponent(message)}`;
+    window.open(url, '_blank', 'noopener,noreferrer');
+  };
 
   return (
     <>
@@ -99,11 +145,18 @@ export default function CartDrawer({ onCheckout }: CartDrawerProps) {
                 </span>
               </div>
               <button
-                onClick={onCheckout}
-                className="w-full py-3.5 bg-charcoal_brown-500 text-khaki_beige-900 rounded-full text-sm tracking-wide font-medium hover:bg-charcoal_brown-400 transition-colors"
+                onClick={handleWhatsAppCheckout}
+                disabled={!whatsappNumber}
+                className="w-full py-3.5 bg-charcoal_brown-500 text-khaki_beige-900 rounded-full text-sm tracking-wide font-medium hover:bg-charcoal_brown-400 transition-colors flex items-center justify-center gap-2 disabled:cursor-not-allowed disabled:opacity-50"
               >
-                Realizar Pedido
+                <MessageCircle className="w-4 h-4" />
+                Enviar pedido por WhatsApp
               </button>
+              {!whatsappNumber && (
+                <p className="text-xs text-center text-toffee_brown-600">
+                  Configura el teléfono de WhatsApp en Admin para activar pedidos.
+                </p>
+              )}
             </div>
           </>
         )}
