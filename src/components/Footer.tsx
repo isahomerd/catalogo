@@ -1,0 +1,89 @@
+import { Instagram, Facebook, Mail, Phone, MapPin } from 'lucide-react';
+
+interface FooterProps {
+  onNavigate: (page: string) => void;
+}
+
+export default function Footer({ onNavigate }: FooterProps) {
+  return (
+    <footer className="bg-charcoal_brown-500 text-khaki_beige-800 mt-20">
+      <div className="max-w-7xl mx-auto px-5 sm:px-8 py-14 grid grid-cols-1 md:grid-cols-4 gap-10">
+        <div className="md:col-span-2">
+          <div className="flex items-baseline gap-1 mb-4">
+            <span className="font-serif text-3xl font-semibold text-khaki_beige-900">
+              Isa
+            </span>
+            <span className="font-serif text-3xl font-light italic text-dry_sage-600">
+              Home
+            </span>
+          </div>
+          <p className="text-sm leading-relaxed text-khaki_beige-700 max-w-md">
+            Artículos para el hogar seleccionados a mano. Diseño atemporal,
+            materiales nobles y la calidez que tu hogar merece.
+          </p>
+          <div className="flex gap-3 mt-5">
+            <a
+              href="#"
+              className="w-9 h-9 rounded-full border border-dry_sage-600/50 flex items-center justify-center hover:bg-dry_sage-600/20 transition-colors"
+            >
+              <Instagram className="w-4 h-4" />
+            </a>
+            <a
+              href="#"
+              className="w-9 h-9 rounded-full border border-dry_sage-600/50 flex items-center justify-center hover:bg-dry_sage-600/20 transition-colors"
+            >
+              <Facebook className="w-4 h-4" />
+            </a>
+          </div>
+        </div>
+
+        <div>
+          <h4 className="font-serif text-lg text-khaki_beige-900 mb-4">Navegación</h4>
+          <ul className="space-y-2 text-sm">
+            <li>
+              <button onClick={() => onNavigate('home')} className="text-khaki_beige-700 hover:text-dry_sage-600 transition-colors">
+                Inicio
+              </button>
+            </li>
+            <li>
+              <button onClick={() => onNavigate('catalog')} className="text-khaki_beige-700 hover:text-dry_sage-600 transition-colors">
+                Catálogo
+              </button>
+            </li>
+            <li>
+              <button onClick={() => onNavigate('contact')} className="text-khaki_beige-700 hover:text-dry_sage-600 transition-colors">
+                Contacto
+              </button>
+            </li>
+            <li>
+              <button onClick={() => onNavigate('admin')} className="text-khaki_beige-700 hover:text-dry_sage-600 transition-colors">
+                Admin
+              </button>
+            </li>
+          </ul>
+        </div>
+
+        <div>
+          <h4 className="font-serif text-lg text-khaki_beige-900 mb-4">Contacto</h4>
+          <ul className="space-y-3 text-sm text-khaki_beige-700">
+            <li className="flex items-center gap-2">
+              <Phone className="w-4 h-4 shrink-0" /> +34 600 123 456
+            </li>
+            <li className="flex items-center gap-2">
+              <Mail className="w-4 h-4 shrink-0" /> hola@isahome.com
+            </li>
+            <li className="flex items-start gap-2">
+              <MapPin className="w-4 h-4 shrink-0 mt-0.5" /> Calle Mayor 24, Madrid
+            </li>
+          </ul>
+        </div>
+      </div>
+
+      <div className="border-t border-dry_sage-600/30">
+        <div className="max-w-7xl mx-auto px-5 sm:px-8 py-5 text-center text-xs text-khaki_beige-700">
+          © 2026 Isa Home. Todos los derechos reservados.
+        </div>
+      </div>
+    </footer>
+  );
+}
