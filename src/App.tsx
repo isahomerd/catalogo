@@ -8,15 +8,17 @@ import HomePage from './pages/HomePage';
 import CatalogPage from './pages/CatalogPage';
 import ContactPage from './pages/ContactPage';
 import AdminPage from './pages/AdminPage';
-import { defaultHomeContent, initialMessages } from './data';
-import type { Product, ContactMessage, HomeContent } from './types';
+import { defaultHomeContent, defaultSiteContact, initialMessages } from './data';
+import type { Product, ContactMessage, HomeContent, SiteContact } from './types';
 import { fetchHomeContent } from './services/homeContent';
+import { fetchSiteContact } from './services/siteContact';
 
 function App() {
   const [page, setPage] = useState('home');
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
   const [messages, setMessages] = useState<ContactMessage[]>(initialMessages);
   const [homeContent, setHomeContent] = useState<HomeContent>(defaultHomeContent);
+  const [siteContact, setSiteContact] = useState<SiteContact>(defaultSiteContact);
 
   useEffect(() => {
     let ignore = false;
@@ -27,6 +29,22 @@ function App() {
       })
       .catch((error) => {
         console.error('No se pudo cargar el contenido del Home:', error);
+      });
+
+    return () => {
+      ignore = true;
+    };
+  }, []);
+
+  useEffect(() => {
+    let ignore = false;
+
+    fetchSiteContact()
+      .then((contact) => {
+        if (!ignore && contact) setSiteContact(contact);
+      })
+      .catch((error) => {
+        console.error('No se pudo cargar el contacto del sitio:', error);
       });
 
     return () => {
@@ -89,7 +107,9 @@ function App() {
             />
           )}
           {page === 'catalog' && <CatalogPage onProductClick={setSelectedProduct} />}
-          {page === 'contact' && <ContactPage onMessageSent={handleMessageSent} />}
+          {page === 'contact' && (
+            <ContactPage contact={siteContact} onMessageSent={handleMessageSent} />
+          )}
           {page === 'admin' && (
             <AdminPage
               messages={messages}
@@ -99,11 +119,13 @@ function App() {
               onDeleteProduct={deleteProduct}
               homeContent={homeContent}
               onHomeContentChange={setHomeContent}
+              siteContact={siteContact}
+              onSiteContactChange={setSiteContact}
             />
           )}
         </main>
 
-        <Footer onNavigate={navigate} />
+        <Footer contact={siteContact} onNavigate={navigate} />
 
         <CartDrawer onCheckout={() => navigate('contact')} />
         <ProductModal

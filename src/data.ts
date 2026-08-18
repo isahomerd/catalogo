@@ -1,4 +1,4 @@
-import type { Product, ContactMessage, HomeContent } from './types';
+import type { Product, ContactMessage, HomeContent, SiteContact } from './types';
 
 export const defaultHomeContent: HomeContent = {
   eyebrow: 'Artículos para el Hogar',
@@ -9,6 +9,13 @@ export const defaultHomeContent: HomeContent = {
   imageUrl:
     'https://images.pexels.com/photos/27515145/pexels-photo-27515145.jpeg?auto=compress&cs=tinysrgb&h=900&w=1600',
   imageAlt: 'Sala de estar elegante',
+};
+
+export const defaultSiteContact: SiteContact = {
+  phone: '+34 600 123 456',
+  email: 'hola@isahome.com',
+  address: 'Calle Mayor 24, Madrid',
+  hours: 'Lun-Vie: 10:00-20:00',
 };
 
 export const products: Product[] = [

@@ -1,10 +1,12 @@
 import { Instagram, Facebook, Mail, Phone, MapPin } from 'lucide-react';
+import type { SiteContact } from '../types';
 
 interface FooterProps {
+  contact: SiteContact;
   onNavigate: (page: string) => void;
 }
 
-export default function Footer({ onNavigate }: FooterProps) {
+export default function Footer({ contact, onNavigate }: FooterProps) {
   return (
     <footer className="bg-charcoal_brown-500 text-khaki_beige-800 mt-20">
       <div className="max-w-7xl mx-auto px-5 sm:px-8 py-14 grid grid-cols-1 md:grid-cols-4 gap-10">
@@ -67,13 +69,13 @@ export default function Footer({ onNavigate }: FooterProps) {
           <h4 className="font-serif text-lg text-khaki_beige-900 mb-4">Contacto</h4>
           <ul className="space-y-3 text-sm text-khaki_beige-700">
             <li className="flex items-center gap-2">
-              <Phone className="w-4 h-4 shrink-0" /> +34 600 123 456
+              <Phone className="w-4 h-4 shrink-0" /> {contact.phone}
             </li>
             <li className="flex items-center gap-2">
-              <Mail className="w-4 h-4 shrink-0" /> hola@isahome.com
+              <Mail className="w-4 h-4 shrink-0" /> {contact.email}
             </li>
             <li className="flex items-start gap-2">
-              <MapPin className="w-4 h-4 shrink-0 mt-0.5" /> Calle Mayor 24, Madrid
+              <MapPin className="w-4 h-4 shrink-0 mt-0.5" /> {contact.address}
             </li>
           </ul>
         </div>

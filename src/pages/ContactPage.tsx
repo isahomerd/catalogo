@@ -1,8 +1,10 @@
 import { useState } from 'react';
 import { Send, Check, Phone, Mail, MapPin, Clock } from 'lucide-react';
 import { useCart } from '../cart';
+import type { SiteContact } from '../types';
 
 interface ContactPageProps {
+  contact: SiteContact;
   onMessageSent: (msg: {
     name: string;
     email: string;
@@ -11,7 +13,7 @@ interface ContactPageProps {
   }) => void;
 }
 
-export default function ContactPage({ onMessageSent }: ContactPageProps) {
+export default function ContactPage({ contact, onMessageSent }: ContactPageProps) {
   const { items, totalPrice, clearCart } = useCart();
   const [form, setForm] = useState({ name: '', email: '', phone: '', message: '' });
   const [sent, setSent] = useState(false);
@@ -65,10 +67,10 @@ export default function ContactPage({ onMessageSent }: ContactPageProps) {
             </h2>
             <ul className="space-y-4">
               {[
-                { icon: Phone, label: 'Teléfono', value: '+34 600 123 456' },
-                { icon: Mail, label: 'Email', value: 'hola@isahome.com' },
-                { icon: MapPin, label: 'Dirección', value: 'Calle Mayor 24, Madrid' },
-                { icon: Clock, label: 'Horario', value: 'Lun-Vie: 10:00-20:00' },
+                { icon: Phone, label: 'Teléfono', value: contact.phone },
+                { icon: Mail, label: 'Email', value: contact.email },
+                { icon: MapPin, label: 'Dirección', value: contact.address },
+                { icon: Clock, label: 'Horario', value: contact.hours },
               ].map((item) => (
                 <li key={item.label} className="flex items-start gap-3">
                   <div className="w-10 h-10 rounded-full bg-dry_sage-200/60 flex items-center justify-center shrink-0">

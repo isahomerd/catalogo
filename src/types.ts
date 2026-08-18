@@ -43,3 +43,10 @@ export interface HomeContent {
   imageUrl: string;
   imageAlt: string;
 }
+
+export interface SiteContact {
+  phone: string;
+  email: string;
+  address: string;
+  hours: string;
+}

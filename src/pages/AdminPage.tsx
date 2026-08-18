@@ -16,10 +16,12 @@ import {
   Eye,
   Save,
   UploadCloud,
+  MapPin,
 } from 'lucide-react';
-import type { Product, ContactMessage, HomeContent } from '../types';
+import type { Product, ContactMessage, HomeContent, SiteContact } from '../types';
 import { products as initialProducts, categories, defaultHomeContent } from '../data';
 import { saveHomeContent, uploadHomeImage } from '../services/homeContent';
+import { saveSiteContact } from '../services/siteContact';
 
 interface AdminPageProps {
   messages: ContactMessage[];
@@ -29,6 +31,8 @@ interface AdminPageProps {
   onDeleteProduct: (id: string) => void;
   homeContent: HomeContent;
   onHomeContentChange: (content: HomeContent) => void;
+  siteContact: SiteContact;
+  onSiteContactChange: (contact: SiteContact) => void;
 }
 
 export default function AdminPage({
@@ -39,14 +43,18 @@ export default function AdminPage({
   onDeleteProduct,
   homeContent,
   onHomeContentChange,
+  siteContact,
+  onSiteContactChange,
 }: AdminPageProps) {
-  const [tab, setTab] = useState<'products' | 'messages' | 'home'>('products');
+  const [tab, setTab] = useState<'products' | 'messages' | 'home' | 'contact'>('products');
   const [showForm, setShowForm] = useState(false);
   const [productList, setProductList] = useState<Product[]>(initialProducts);
   const [search, setSearch] = useState('');
   const [homeStatus, setHomeStatus] = useState('');
   const [savingHome, setSavingHome] = useState(false);
   const [uploadingHomeImage, setUploadingHomeImage] = useState(false);
+  const [contactStatus, setContactStatus] = useState('');
+  const [savingContact, setSavingContact] = useState(false);
 
   const [newProduct, setNewProduct] = useState({
     name: '',
@@ -62,6 +70,10 @@ export default function AdminPage({
 
   const updateHomeField = (field: keyof HomeContent, value: string) => {
     onHomeContentChange({ ...homeContent, [field]: value });
+  };
+
+  const updateContactField = (field: keyof SiteContact, value: string) => {
+    onSiteContactChange({ ...siteContact, [field]: value });
   };
 
   const resetHomeContent = () => {
@@ -102,6 +114,21 @@ export default function AdminPage({
       setHomeStatus('No se pudo subir la imagen.');
     } finally {
       setUploadingHomeImage(false);
+    }
+  };
+
+  const handleSaveSiteContact = async () => {
+    setSavingContact(true);
+    setContactStatus('');
+    try {
+      const savedContact = await saveSiteContact(siteContact);
+      onSiteContactChange(savedContact);
+      setContactStatus('Contacto guardado en Supabase.');
+    } catch (error) {
+      console.error(error);
+      setContactStatus('No se pudo guardar el contacto.');
+    } finally {
+      setSavingContact(false);
     }
   };
 
@@ -193,6 +220,17 @@ export default function AdminPage({
           >
             <Image className="w-4 h-4" />
             Home
+          </button>
+          <button
+            onClick={() => setTab('contact')}
+            className={`flex items-center gap-2 px-5 py-3 text-sm font-medium border-b-2 transition-colors -mb-px ${
+              tab === 'contact'
+                ? 'border-toffee_brown-500 text-charcoal_brown-500'
+                : 'border-transparent text-ebony-500 hover:text-charcoal_brown-500'
+            }`}
+          >
+            <Phone className="w-4 h-4" />
+            Contacto
           </button>
           <button
             onClick={() => setTab('messages')}
@@ -539,6 +577,133 @@ export default function AdminPage({
                     </span>
                   </div>
                 </div>
+              </div>
+            </div>
+          </div>
+        </section>
+      )}
+
+      {/* Contact Tab */}
+      {tab === 'contact' && (
+        <section className="max-w-7xl mx-auto px-5 sm:px-8 py-8">
+          <div className="grid lg:grid-cols-5 gap-8 items-start">
+            <div className="lg:col-span-2">
+              <div className="mb-5">
+                <h2 className="font-serif text-2xl text-charcoal_brown-500">
+                  Datos de contacto
+                </h2>
+                <p className="text-sm text-ebony-500 mt-1">
+                  Información visible en Contacto y Footer.
+                </p>
+              </div>
+
+              <div className="space-y-5 bg-khaki_beige-800/60 border border-dry_sage-300/40 rounded-2xl p-6">
+                <div>
+                  <label className="text-xs uppercase tracking-widest text-ebony-500 mb-1.5 flex items-center gap-2">
+                    <Phone className="w-3.5 h-3.5" />
+                    Teléfono
+                  </label>
+                  <input
+                    type="tel"
+                    value={siteContact.phone}
+                    onChange={(e) => updateContactField('phone', e.target.value)}
+                    className="w-full px-4 py-2.5 text-sm bg-khaki_beige-900/70 border border-dry_sage-300/50 rounded-lg focus:outline-none focus:border-toffee_brown-500 text-charcoal_brown-500"
+                    placeholder="+1 809 000 0000"
+                  />
+                </div>
+
+                <div>
+                  <label className="text-xs uppercase tracking-widest text-ebony-500 mb-1.5 flex items-center gap-2">
+                    <Mail className="w-3.5 h-3.5" />
+                    Correo
+                  </label>
+                  <input
+                    type="email"
+                    value={siteContact.email}
+                    onChange={(e) => updateContactField('email', e.target.value)}
+                    className="w-full px-4 py-2.5 text-sm bg-khaki_beige-900/70 border border-dry_sage-300/50 rounded-lg focus:outline-none focus:border-toffee_brown-500 text-charcoal_brown-500"
+                    placeholder="hola@isahome.com"
+                  />
+                </div>
+
+                <div>
+                  <label className="text-xs uppercase tracking-widest text-ebony-500 mb-1.5 flex items-center gap-2">
+                    <MapPin className="w-3.5 h-3.5" />
+                    Dirección
+                  </label>
+                  <textarea
+                    value={siteContact.address}
+                    onChange={(e) => updateContactField('address', e.target.value)}
+                    rows={3}
+                    className="w-full px-4 py-2.5 text-sm bg-khaki_beige-900/70 border border-dry_sage-300/50 rounded-lg focus:outline-none focus:border-toffee_brown-500 text-charcoal_brown-500 resize-none"
+                    placeholder="Dirección de la tienda"
+                  />
+                </div>
+
+                <div>
+                  <label className="text-xs uppercase tracking-widest text-ebony-500 mb-1.5 flex items-center gap-2">
+                    <Clock className="w-3.5 h-3.5" />
+                    Horario
+                  </label>
+                  <input
+                    type="text"
+                    value={siteContact.hours}
+                    onChange={(e) => updateContactField('hours', e.target.value)}
+                    className="w-full px-4 py-2.5 text-sm bg-khaki_beige-900/70 border border-dry_sage-300/50 rounded-lg focus:outline-none focus:border-toffee_brown-500 text-charcoal_brown-500"
+                    placeholder="Lun-Vie: 10:00-20:00"
+                  />
+                </div>
+
+                <div className="flex flex-col sm:flex-row sm:items-center gap-3 pt-2">
+                  <button
+                    type="button"
+                    onClick={handleSaveSiteContact}
+                    disabled={savingContact}
+                    className="inline-flex items-center justify-center gap-2 bg-charcoal_brown-500 text-khaki_beige-900 px-6 py-3 rounded-full text-sm font-medium hover:bg-charcoal_brown-400 transition-colors disabled:opacity-60"
+                  >
+                    <Save className="w-4 h-4" />
+                    {savingContact ? 'Guardando...' : 'Guardar contacto'}
+                  </button>
+                  {contactStatus && (
+                    <p className="text-sm text-ebony-600">
+                      {contactStatus}
+                    </p>
+                  )}
+                </div>
+              </div>
+            </div>
+
+            <div className="lg:col-span-3">
+              <div className="flex items-center gap-2 mb-5">
+                <Eye className="w-4 h-4 text-toffee_brown-600" />
+                <h3 className="text-sm font-medium text-charcoal_brown-500">
+                  Vista previa
+                </h3>
+              </div>
+              <div className="grid sm:grid-cols-2 gap-5">
+                {[
+                  { icon: Phone, label: 'Teléfono', value: siteContact.phone },
+                  { icon: Mail, label: 'Email', value: siteContact.email },
+                  { icon: MapPin, label: 'Dirección', value: siteContact.address },
+                  { icon: Clock, label: 'Horario', value: siteContact.hours },
+                ].map((item) => (
+                  <div
+                    key={item.label}
+                    className="min-h-32 rounded-2xl border border-dry_sage-300/40 bg-khaki_beige-800/60 p-5 flex items-start gap-4"
+                  >
+                    <div className="w-10 h-10 rounded-full bg-dry_sage-200/60 flex items-center justify-center shrink-0">
+                      <item.icon className="w-4 h-4 text-toffee_brown-600" />
+                    </div>
+                    <div className="min-w-0">
+                      <p className="text-xs uppercase tracking-widest text-ebony-500">
+                        {item.label}
+                      </p>
+                      <p className="text-charcoal_brown-500 mt-1 break-words">
+                        {item.value || 'Sin configurar'}
+                      </p>
+                    </div>
+                  </div>
+                ))}
               </div>
             </div>
           </div>
