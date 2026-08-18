@@ -49,4 +49,6 @@ export interface SiteContact {
   email: string;
   address: string;
   hours: string;
+  facebookUrl: string;
+  instagramUrl: string;
 }

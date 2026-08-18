@@ -16,6 +16,8 @@ export const defaultSiteContact: SiteContact = {
   email: 'hola@isahome.com',
   address: 'Calle Mayor 24, Madrid',
   hours: 'Lun-Vie: 10:00-20:00',
+  facebookUrl: '',
+  instagramUrl: '',
 };
 
 export const products: Product[] = [

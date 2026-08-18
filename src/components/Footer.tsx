@@ -23,20 +23,32 @@ export default function Footer({ contact, onNavigate }: FooterProps) {
             Artículos para el hogar seleccionados a mano. Diseño atemporal,
             materiales nobles y la calidez que tu hogar merece.
           </p>
-          <div className="flex gap-3 mt-5">
-            <a
-              href="#"
-              className="w-9 h-9 rounded-full border border-dry_sage-600/50 flex items-center justify-center hover:bg-dry_sage-600/20 transition-colors"
-            >
-              <Instagram className="w-4 h-4" />
-            </a>
-            <a
-              href="#"
-              className="w-9 h-9 rounded-full border border-dry_sage-600/50 flex items-center justify-center hover:bg-dry_sage-600/20 transition-colors"
-            >
-              <Facebook className="w-4 h-4" />
-            </a>
-          </div>
+          {(contact.instagramUrl || contact.facebookUrl) && (
+            <div className="flex gap-3 mt-5">
+              {contact.instagramUrl && (
+                <a
+                  href={contact.instagramUrl}
+                  target="_blank"
+                  rel="noreferrer"
+                  aria-label="Instagram"
+                  className="w-9 h-9 rounded-full border border-dry_sage-600/50 flex items-center justify-center hover:bg-dry_sage-600/20 transition-colors"
+                >
+                  <Instagram className="w-4 h-4" />
+                </a>
+              )}
+              {contact.facebookUrl && (
+                <a
+                  href={contact.facebookUrl}
+                  target="_blank"
+                  rel="noreferrer"
+                  aria-label="Facebook"
+                  className="w-9 h-9 rounded-full border border-dry_sage-600/50 flex items-center justify-center hover:bg-dry_sage-600/20 transition-colors"
+                >
+                  <Facebook className="w-4 h-4" />
+                </a>
+              )}
+            </div>
+          )}
         </div>
 
         <div>

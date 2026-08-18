@@ -1,6 +1,7 @@
-import { ShoppingBag, Menu, X } from 'lucide-react';
-import { useState } from 'react';
-import { useCart } from '../cart';
+import { ShoppingBag, Menu, X } from "lucide-react";
+import { useState } from "react";
+import { useCart } from "../cart";
+import logo from "../assets/logo.png";
 
 interface NavbarProps {
   current: string;
@@ -12,9 +13,9 @@ export default function Navbar({ current, onNavigate }: NavbarProps) {
   const [mobileOpen, setMobileOpen] = useState(false);
 
   const links = [
-    { id: 'home', label: 'Inicio' },
-    { id: 'catalog', label: 'Catálogo' },
-    { id: 'contact', label: 'Contacto' },
+    { id: "home", label: "Inicio" },
+    { id: "catalog", label: "Catálogo" },
+    { id: "contact", label: "Contacto" },
   ];
 
   const go = (id: string) => {
@@ -23,26 +24,25 @@ export default function Navbar({ current, onNavigate }: NavbarProps) {
   };
 
   return (
-    <header className="sticky top-0 z-40 bg-khaki_beige-900/95 backdrop-blur-md border-b border-dry_sage-300/40">
-      <nav className="max-w-7xl mx-auto px-5 sm:px-8 h-16 flex items-center justify-between">
-        <button onClick={() => go('home')} className="flex items-center gap-2 group">
-          <span className="font-serif text-2xl font-semibold tracking-wide text-charcoal_brown-500">
-            Isa
-          </span>
-          <span className="font-serif text-2xl font-light tracking-wide text-toffee_brown-500 italic">
-            Home
-          </span>
+    <header className="sticky top-0 z-40 border-b backdrop-blur-md bg-khaki_beige-900/95 border-dry_sage-300/40">
+      <nav className="flex justify-between items-center px-5 mx-auto max-w-7xl h-16 sm:px-8">
+        <button onClick={() => go("home")} className="flex items-center group">
+          <img
+            src={logo}
+            alt="Isa Home"
+            className="object-contain w-auto h-10"
+          />
         </button>
 
-        <div className="hidden md:flex items-center gap-8">
+        <div className="hidden gap-8 items-center md:flex">
           {links.map((l) => (
             <button
               key={l.id}
               onClick={() => go(l.id)}
               className={`text-sm tracking-wide transition-colors relative py-1 ${
                 current === l.id
-                  ? 'text-charcoal_brown-500 font-medium'
-                  : 'text-ebony-600 hover:text-charcoal_brown-500'
+                  ? "text-charcoal_brown-500 font-medium"
+                  : "text-ebony-600 hover:text-charcoal_brown-500"
               }`}
             >
               {l.label}
@@ -53,10 +53,10 @@ export default function Navbar({ current, onNavigate }: NavbarProps) {
           ))}
         </div>
 
-        <div className="flex items-center gap-3">
+        <div className="flex gap-3 items-center">
           <button
             onClick={openCart}
-            className="relative p-2 rounded-full hover:bg-dry_sage-200/60 transition-colors"
+            className="relative p-2 rounded-full transition-colors hover:bg-dry_sage-200/60"
             aria-label="Carrito"
           >
             <ShoppingBag className="w-5 h-5 text-charcoal_brown-500" />
@@ -68,7 +68,7 @@ export default function Navbar({ current, onNavigate }: NavbarProps) {
           </button>
           <button
             onClick={() => setMobileOpen(!mobileOpen)}
-            className="md:hidden p-2 rounded-full hover:bg-dry_sage-200/60"
+            className="p-2 rounded-full md:hidden hover:bg-dry_sage-200/60"
             aria-label="Menú"
           >
             {mobileOpen ? (
@@ -81,16 +81,16 @@ export default function Navbar({ current, onNavigate }: NavbarProps) {
       </nav>
 
       {mobileOpen && (
-        <div className="md:hidden border-t border-dry_sage-300/40 bg-khaki_beige-900 animate-fade-in">
-          <div className="px-5 py-3 flex flex-col gap-1">
+        <div className="border-t md:hidden border-dry_sage-300/40 bg-khaki_beige-900 animate-fade-in">
+          <div className="flex flex-col gap-1 px-5 py-3">
             {links.map((l) => (
               <button
                 key={l.id}
                 onClick={() => go(l.id)}
                 className={`text-left py-2.5 text-sm transition-colors ${
                   current === l.id
-                    ? 'text-charcoal_brown-500 font-medium'
-                    : 'text-ebony-600'
+                    ? "text-charcoal_brown-500 font-medium"
+                    : "text-ebony-600"
                 }`}
               >
                 {l.label}

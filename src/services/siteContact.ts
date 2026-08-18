@@ -9,6 +9,8 @@ interface SiteContactRow {
   email: string;
   address: string;
   hours: string;
+  facebook_url: string;
+  instagram_url: string;
 }
 
 function fromRow(row: SiteContactRow): SiteContact {
@@ -17,6 +19,8 @@ function fromRow(row: SiteContactRow): SiteContact {
     email: row.email,
     address: row.address,
     hours: row.hours,
+    facebookUrl: row.facebook_url,
+    instagramUrl: row.instagram_url,
   };
 }
 
@@ -27,6 +31,8 @@ function toRow(contact: SiteContact): SiteContactRow {
     email: contact.email,
     address: contact.address,
     hours: contact.hours,
+    facebook_url: contact.facebookUrl,
+    instagram_url: contact.instagramUrl,
   };
 }
 
@@ -36,7 +42,7 @@ export async function fetchSiteContact() {
   const { data, error } = await supabase
     .schema(HOME_SCHEMA)
     .from('site_contact')
-    .select('id, phone, email, address, hours')
+    .select('id, phone, email, address, hours, facebook_url, instagram_url')
     .eq('id', 'main')
     .single<SiteContactRow>();
 
@@ -52,7 +58,7 @@ export async function saveSiteContact(contact: SiteContact) {
     .from('site_contact')
     .update(toRow(contact))
     .eq('id', 'main')
-    .select('id, phone, email, address, hours')
+    .select('id, phone, email, address, hours, facebook_url, instagram_url')
     .single<SiteContactRow>();
 
   if (error) throw error;

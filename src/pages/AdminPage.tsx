@@ -17,6 +17,8 @@ import {
   Save,
   UploadCloud,
   MapPin,
+  Instagram,
+  Facebook,
 } from 'lucide-react';
 import type { Product, ContactMessage, HomeContent, SiteContact } from '../types';
 import { products as initialProducts, categories, defaultHomeContent } from '../data';
@@ -654,6 +656,34 @@ export default function AdminPage({
                   />
                 </div>
 
+                <div>
+                  <label className="text-xs uppercase tracking-widest text-ebony-500 mb-1.5 flex items-center gap-2">
+                    <Instagram className="w-3.5 h-3.5" />
+                    Instagram
+                  </label>
+                  <input
+                    type="url"
+                    value={siteContact.instagramUrl}
+                    onChange={(e) => updateContactField('instagramUrl', e.target.value)}
+                    className="w-full px-4 py-2.5 text-sm bg-khaki_beige-900/70 border border-dry_sage-300/50 rounded-lg focus:outline-none focus:border-toffee_brown-500 text-charcoal_brown-500"
+                    placeholder="https://instagram.com/isahomerd"
+                  />
+                </div>
+
+                <div>
+                  <label className="text-xs uppercase tracking-widest text-ebony-500 mb-1.5 flex items-center gap-2">
+                    <Facebook className="w-3.5 h-3.5" />
+                    Facebook
+                  </label>
+                  <input
+                    type="url"
+                    value={siteContact.facebookUrl}
+                    onChange={(e) => updateContactField('facebookUrl', e.target.value)}
+                    className="w-full px-4 py-2.5 text-sm bg-khaki_beige-900/70 border border-dry_sage-300/50 rounded-lg focus:outline-none focus:border-toffee_brown-500 text-charcoal_brown-500"
+                    placeholder="https://facebook.com/isahomerd"
+                  />
+                </div>
+
                 <div className="flex flex-col sm:flex-row sm:items-center gap-3 pt-2">
                   <button
                     type="button"
@@ -686,6 +716,8 @@ export default function AdminPage({
                   { icon: Mail, label: 'Email', value: siteContact.email },
                   { icon: MapPin, label: 'Dirección', value: siteContact.address },
                   { icon: Clock, label: 'Horario', value: siteContact.hours },
+                  { icon: Instagram, label: 'Instagram', value: siteContact.instagramUrl },
+                  { icon: Facebook, label: 'Facebook', value: siteContact.facebookUrl },
                 ].map((item) => (
                   <div
                     key={item.label}
