@@ -1131,49 +1131,64 @@ export default function AdminPage({
                 />
               </div>
 
-              <div>
+              <div className="sm:col-span-2">
                 <label className="text-xs uppercase tracking-widest text-ebony-500 mb-1.5 block">
-                  URL de imagen
+                  Imagen del producto
                 </label>
-                <input
-                  type="url"
-                  value={productDraft.imageUrl}
-                  onChange={(e) => setProductDraft({ ...productDraft, imageUrl: e.target.value })}
-                  className="w-full px-4 py-2.5 text-sm bg-khaki_beige-800/70 border border-dry_sage-300/50 rounded-lg focus:outline-none focus:border-toffee_brown-500 text-charcoal_brown-500"
-                  placeholder="https://..."
-                />
-              </div>
-
-              <div className="sm:col-span-2 grid sm:grid-cols-[180px_1fr] gap-4 items-stretch">
-                <div className="aspect-square overflow-hidden rounded-xl bg-dry_sage-200/40">
-                  {productDraft.imageUrl ? (
-                    <img
-                      src={productDraft.imageUrl}
-                      alt=""
-                      className="w-full h-full object-cover"
-                    />
-                  ) : (
-                    <div className="w-full h-full flex items-center justify-center text-ebony-400">
-                      <Image className="w-8 h-8" strokeWidth={1.5} />
+                <div className="rounded-xl border border-dry_sage-300/50 bg-khaki_beige-800/70 overflow-hidden">
+                  <div className="grid md:grid-cols-[240px_1fr]">
+                    <div className="relative aspect-[4/3] bg-dry_sage-200/40">
+                      {productDraft.imageUrl ? (
+                        <img
+                          src={productDraft.imageUrl}
+                          alt=""
+                          className="w-full h-full object-cover"
+                        />
+                      ) : (
+                        <div className="w-full h-full flex flex-col items-center justify-center text-ebony-400">
+                          <Image className="w-8 h-8 mb-2" strokeWidth={1.5} />
+                          <span className="text-xs">Sin imagen</span>
+                        </div>
+                      )}
+                      <label className="absolute inset-x-3 bottom-3 cursor-pointer">
+                        <span className="flex items-center justify-center gap-2 rounded-full bg-khaki_beige-900/95 px-4 py-2.5 text-sm font-medium text-charcoal_brown-500 shadow-sm backdrop-blur transition-colors hover:bg-dry_sage-200">
+                          <UploadCloud className="w-4 h-4" />
+                          {uploadingProductImage ? 'Subiendo...' : productDraft.imageUrl ? 'Cambiar imagen' : 'Subir imagen'}
+                        </span>
+                        <input
+                          type="file"
+                          accept="image/jpeg,image/png,image/webp,image/gif"
+                          className="sr-only"
+                          disabled={uploadingProductImage}
+                          onChange={(e) => handleProductImageSelect(e.target.files?.[0])}
+                        />
+                      </label>
                     </div>
-                  )}
+
+                    <div className="p-5 flex flex-col justify-center gap-4">
+                      <div>
+                        <p className="text-sm font-medium text-charcoal_brown-500">
+                          Foto principal
+                        </p>
+                        <p className="text-xs text-ebony-500 mt-1">
+                          Usa una imagen cuadrada o horizontal. Se guardará en isahome/ISAHOME/products/.
+                        </p>
+                      </div>
+                      <div>
+                        <label className="text-xs uppercase tracking-widest text-ebony-500 mb-1.5 block">
+                          URL de imagen
+                        </label>
+                        <input
+                          type="url"
+                          value={productDraft.imageUrl}
+                          onChange={(e) => setProductDraft({ ...productDraft, imageUrl: e.target.value })}
+                          className="w-full px-4 py-2.5 text-sm bg-khaki_beige-900/70 border border-dry_sage-300/50 rounded-lg focus:outline-none focus:border-toffee_brown-500 text-charcoal_brown-500"
+                          placeholder="https://..."
+                        />
+                      </div>
+                    </div>
+                  </div>
                 </div>
-                <label className="flex min-h-40 cursor-pointer flex-col items-center justify-center rounded-xl border border-dashed border-dry_sage-400/60 bg-khaki_beige-800/70 px-4 py-5 text-center transition-colors hover:bg-dry_sage-200/30">
-                  <UploadCloud className="w-7 h-7 text-toffee_brown-600 mb-2" strokeWidth={1.5} />
-                  <span className="text-sm font-medium text-charcoal_brown-500">
-                    {uploadingProductImage ? 'Subiendo imagen...' : 'Seleccionar imagen desde tu desktop'}
-                  </span>
-                  <span className="text-xs text-ebony-500 mt-1">
-                    Se guardará en isahome/ISAHOME/products/
-                  </span>
-                  <input
-                    type="file"
-                    accept="image/jpeg,image/png,image/webp,image/gif"
-                    className="sr-only"
-                    disabled={uploadingProductImage}
-                    onChange={(e) => handleProductImageSelect(e.target.files?.[0])}
-                  />
-                </label>
               </div>
 
               {productStatus && (
