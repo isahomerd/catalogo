@@ -29,6 +29,21 @@ function formatColorName(color: string) {
   return colorNames[color.toLowerCase()] || color;
 }
 
+const icon = {
+  bag: String.fromCodePoint(0x1f6cd, 0xfe0f),
+  wave: String.fromCodePoint(0x1f44b),
+  box: String.fromCodePoint(0x1f4e6),
+  circle: String.fromCodePoint(0x26ab),
+  money: String.fromCodePoint(0x1f4b0),
+  receipt: String.fromCodePoint(0x1f9fe),
+  phone: String.fromCodePoint(0x1f4f2),
+  check: String.fromCodePoint(0x2705),
+  card: String.fromCodePoint(0x1f4b3),
+  truck: String.fromCodePoint(0x1f69a),
+  home: String.fromCodePoint(0x1f3e1),
+  sparkle: String.fromCodePoint(0x2728),
+};
+
 function buildWhatsAppMessage(items: CartItem[], totalPrice: number) {
   const lines = items.map((item) => {
     const unitPrice = formatCurrency(item.product.price);
@@ -37,38 +52,38 @@ function buildWhatsAppMessage(items: CartItem[], totalPrice: number) {
     return [
       '━━━━━━━━━━━━━━━',
       '',
-      `🛍️ **${item.product.name}**`,
+      `${icon.bag} **${item.product.name}**`,
       '',
-      `📦 **Cantidad:** ${quantityLabel}`,
-      `⚫ **Color:** ${formatColorName(item.selectedColor)}`,
-      `💰 **Precio:** ${unitPrice}`,
+      `${icon.box} **Cantidad:** ${quantityLabel}`,
+      `${icon.circle} **Color:** ${formatColorName(item.selectedColor)}`,
+      `${icon.money} **Precio:** ${unitPrice}`,
     ].join('\n');
   });
 
   return [
-    '🛍️ **NUEVO PEDIDO — ISA HOME**',
+    `${icon.bag} **NUEVO PEDIDO — ISA HOME**`,
     '',
-    '¡Hola! 👋',
+    `¡Hola! ${icon.wave}`,
     'Me gustaría realizar el siguiente pedido:',
     '',
     ...lines,
     '',
     '━━━━━━━━━━━━━━━',
     '',
-    '🧾 **RESUMEN DEL PEDIDO**',
+    `${icon.receipt} **RESUMEN DEL PEDIDO**`,
     '',
     `**Subtotal:** ${formatCurrency(totalPrice)}`,
-    `💵 **TOTAL: ${formatCurrency(totalPrice)}**`,
+    `${icon.money} **TOTAL:** ${formatCurrency(totalPrice)}`,
     '',
     '━━━━━━━━━━━━━━━',
     '',
-    '📲 Quedo atento/a para confirmar:',
+    `${icon.phone} Quedo atento/a para confirmar:`,
     '',
-    '✅ Disponibilidad',
-    '💳 Método de pago',
-    '🚚 Detalles de entrega',
+    `${icon.check} Disponibilidad`,
+    `${icon.card} Método de pago`,
+    `${icon.truck} Detalles de entrega`,
     '',
-    '¡Muchas gracias por elegir **Isa Home**! 🏡✨',
+    `¡Muchas gracias por elegir **Isa Home**! ${icon.home}${icon.sparkle}`,
   ].join('\n');
 }
 
@@ -80,7 +95,8 @@ export default function CartDrawer({ whatsappPhone }: CartDrawerProps) {
     if (!whatsappNumber) return;
 
     const message = buildWhatsAppMessage(items, totalPrice);
-    const url = `https://wa.me/${whatsappNumber}?text=${encodeURIComponent(message)}`;
+    const params = new URLSearchParams({ phone: whatsappNumber, text: message });
+    const url = `https://api.whatsapp.com/send?${params.toString()}`;
     window.open(url, '_blank', 'noopener,noreferrer');
   };
 
