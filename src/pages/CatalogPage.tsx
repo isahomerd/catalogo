@@ -1,6 +1,7 @@
 import { useState, useMemo } from 'react';
 import { Search, SlidersHorizontal } from 'lucide-react';
 import type { Product } from '../types';
+import { formatCurrency } from '../utils/format';
 
 interface CatalogPageProps {
   products: Product[];
@@ -151,7 +152,7 @@ export default function CatalogPage({ products, categories, onProductClick }: Ca
                       {product.name}
                     </h3>
                     <span className="font-serif text-xl text-toffee_brown-500">
-                      €{product.price.toFixed(2)}
+                      {formatCurrency(product.price)}
                     </span>
                   </div>
                 </button>

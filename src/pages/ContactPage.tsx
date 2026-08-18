@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Send, Check, Phone, Mail, MapPin, Clock } from 'lucide-react';
 import { useCart } from '../cart';
 import type { SiteContact } from '../types';
+import { formatCurrency } from '../utils/format';
 
 interface ContactPageProps {
   contact: SiteContact;
@@ -92,13 +93,13 @@ export default function ContactPage({ contact, onMessageSent }: ContactPageProps
               </h3>
               <p className="text-sm text-ebony-600 mb-3">
                 Tu mensaje se enviará con los {items.length} artículos de tu carrito
-                (subtotal: <strong>€{totalPrice.toFixed(2)}</strong>).
+                (subtotal: <strong>{formatCurrency(totalPrice)}</strong>).
               </p>
               <div className="space-y-1.5 max-h-32 overflow-y-auto scrollbar-hide">
                 {items.map((i) => (
                   <div key={`${i.product.id}-${i.selectedColor}`} className="flex justify-between text-xs text-ebony-500">
                     <span className="truncate pr-2">{i.product.name} ×{i.quantity}</span>
-                    <span>€{(i.product.price * i.quantity).toFixed(2)}</span>
+                    <span>{formatCurrency(i.product.price * i.quantity)}</span>
                   </div>
                 ))}
               </div>

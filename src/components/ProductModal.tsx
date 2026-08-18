@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { X, Plus, Minus, ShoppingBag, Check } from 'lucide-react';
 import type { Product } from '../types';
 import { useCart } from '../cart';
+import { formatCurrency } from '../utils/format';
 
 interface ProductModalProps {
   product: Product | null;
@@ -96,7 +97,7 @@ export default function ProductModal({ product, onClose }: ProductModalProps) {
                 {product.name}
               </h2>
               <p className="font-serif text-3xl text-toffee_brown-500 mb-5">
-                €{product.price.toFixed(2)}
+                {formatCurrency(product.price)}
               </p>
 
               <p className="text-sm leading-relaxed text-ebony-600 mb-6">

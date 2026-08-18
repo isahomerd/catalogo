@@ -1,5 +1,6 @@
 import { ArrowRight, Star, Truck, ShieldCheck, Heart } from 'lucide-react';
 import type { HomeContent, Product } from '../types';
+import { formatCurrency } from '../utils/format';
 
 interface HomePageProps {
   content: HomeContent;
@@ -129,7 +130,7 @@ export default function HomePage({ content, products, onNavigate, onProductClick
                 </h3>
                 <div className="flex items-center justify-between">
                   <span className="font-serif text-2xl text-toffee_brown-500">
-                    €{product.price.toFixed(2)}
+                    {formatCurrency(product.price)}
                   </span>
                   <span className="text-sm text-ebony-500 group-hover:text-toffee_brown-600 transition-colors flex items-center gap-1">
                     Ver detalle <ArrowRight className="w-4 h-4" />

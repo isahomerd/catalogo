@@ -35,6 +35,7 @@ import {
   deleteCategory as deleteSupabaseCategory,
   saveCategory,
 } from '../services/categories';
+import { formatCurrency } from '../utils/format';
 
 type ProductDraft = {
   id?: string;
@@ -44,7 +45,7 @@ type ProductDraft = {
   description: string;
   colors: string;
   stock: string;
-  sales: string;
+  existingSales: number;
   imageUrl: string;
   featured: boolean;
 };
@@ -56,7 +57,7 @@ const emptyProductDraft: ProductDraft = {
   description: '',
   colors: '#936639',
   stock: '',
-  sales: '0',
+  existingSales: 0,
   imageUrl: '',
   featured: false,
 };
@@ -193,7 +194,7 @@ export default function AdminPage({
       description: product.description,
       colors: product.colors.join(', '),
       stock: product.stock.toString(),
-      sales: product.sales.toString(),
+      existingSales: product.sales,
       imageUrl: product.images[0] || '',
       featured: Boolean(product.featured),
     });
@@ -217,7 +218,7 @@ export default function AdminPage({
         colors: productDraft.colors.split(',').map((c) => c.trim()).filter(Boolean),
         images: productDraft.imageUrl ? [productDraft.imageUrl] : [],
         stock: Number(productDraft.stock) || 0,
-        sales: Number(productDraft.sales) || 0,
+        sales: productDraft.id ? productDraft.existingSales : 0,
         featured: productDraft.featured,
       });
 
@@ -453,7 +454,7 @@ export default function AdminPage({
                       </div>
                     </td>
                     <td className="px-5 py-3 text-ebony-600 hidden sm:table-cell">{p.category}</td>
-                    <td className="px-5 py-3 font-serif text-charcoal_brown-500">€{p.price.toFixed(2)}</td>
+                    <td className="px-5 py-3 font-serif text-charcoal_brown-500">{formatCurrency(p.price)}</td>
                     <td className="px-5 py-3 text-ebony-600 hidden md:table-cell">{p.stock}</td>
                     <td className="px-5 py-3 text-ebony-600 hidden md:table-cell">{p.sales}</td>
                     <td className="px-5 py-3 text-right">
@@ -1057,7 +1058,7 @@ export default function AdminPage({
 
               <div>
                 <label className="text-xs uppercase tracking-widest text-ebony-500 mb-1.5 block">
-                  Precio
+                  Precio (RD$)
                 </label>
                 <input
                   type="number"
@@ -1065,7 +1066,7 @@ export default function AdminPage({
                   value={productDraft.price}
                   onChange={(e) => setProductDraft({ ...productDraft, price: e.target.value })}
                   className="w-full px-4 py-2.5 text-sm bg-khaki_beige-800/70 border border-dry_sage-300/50 rounded-lg focus:outline-none focus:border-toffee_brown-500 text-charcoal_brown-500"
-                  placeholder="0.00"
+                  placeholder="100.00"
                 />
               </div>
 
@@ -1077,19 +1078,6 @@ export default function AdminPage({
                   type="number"
                   value={productDraft.stock}
                   onChange={(e) => setProductDraft({ ...productDraft, stock: e.target.value })}
-                  className="w-full px-4 py-2.5 text-sm bg-khaki_beige-800/70 border border-dry_sage-300/50 rounded-lg focus:outline-none focus:border-toffee_brown-500 text-charcoal_brown-500"
-                  placeholder="0"
-                />
-              </div>
-
-              <div>
-                <label className="text-xs uppercase tracking-widest text-ebony-500 mb-1.5 block">
-                  Ventas
-                </label>
-                <input
-                  type="number"
-                  value={productDraft.sales}
-                  onChange={(e) => setProductDraft({ ...productDraft, sales: e.target.value })}
                   className="w-full px-4 py-2.5 text-sm bg-khaki_beige-800/70 border border-dry_sage-300/50 rounded-lg focus:outline-none focus:border-toffee_brown-500 text-charcoal_brown-500"
                   placeholder="0"
                 />

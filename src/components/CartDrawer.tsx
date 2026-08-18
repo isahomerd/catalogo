@@ -1,12 +1,11 @@
 import { X, Plus, Minus, Trash2, ShoppingBag, MessageCircle } from 'lucide-react';
 import { useCart } from '../cart';
 import type { CartItem } from '../types';
+import { formatCurrency } from '../utils/format';
 
 interface CartDrawerProps {
   whatsappPhone: string;
 }
-
-const formatCurrency = (amount: number) => `€${amount.toFixed(2)}`;
 
 function formatWhatsAppPhone(phone: string) {
   const digits = phone.replace(/\D/g, '');
@@ -123,7 +122,7 @@ export default function CartDrawer({ whatsappPhone }: CartDrawerProps) {
                         </button>
                       </div>
                       <span className="font-serif text-lg text-charcoal_brown-500">
-                        €{(item.product.price * item.quantity).toFixed(2)}
+                        {formatCurrency(item.product.price * item.quantity)}
                       </span>
                     </div>
                   </div>
@@ -141,7 +140,7 @@ export default function CartDrawer({ whatsappPhone }: CartDrawerProps) {
               <div className="flex items-center justify-between">
                 <span className="text-sm text-ebony-600">Subtotal</span>
                 <span className="font-serif text-2xl text-charcoal_brown-500">
-                  €{totalPrice.toFixed(2)}
+                  {formatCurrency(totalPrice)}
                 </span>
               </div>
               <button
