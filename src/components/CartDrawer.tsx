@@ -12,32 +12,63 @@ function formatWhatsAppPhone(phone: string) {
   return digits.startsWith('00') ? digits.slice(2) : digits;
 }
 
+function formatColorName(color: string) {
+  const colorNames: Record<string, string> = {
+    '#000000': 'Negro',
+    '#111111': 'Negro',
+    '#ffffff': 'Blanco',
+    '#f0efe9': 'Blanco cálido',
+    '#dbd0c1': 'Beige',
+    '#e2ded3': 'Marfil',
+    '#c5bea6': 'Arena',
+    '#b6ad90': 'Beige natural',
+    '#a4ac86': 'Verde salvia',
+    '#936639': 'Marrón',
+  };
+
+  return colorNames[color.toLowerCase()] || color;
+}
+
 function buildWhatsAppMessage(items: CartItem[], totalPrice: number) {
-  const lines = items.map((item, index) => {
+  const lines = items.map((item) => {
     const unitPrice = formatCurrency(item.product.price);
-    const lineTotal = formatCurrency(item.product.price * item.quantity);
+    const quantityLabel = item.quantity === 1 ? '1 unidad' : `${item.quantity} unidades`;
 
     return [
-      `${index + 1}. *${item.product.name}*`,
-      `   Cantidad: ${item.quantity}`,
-      `   Color: ${item.selectedColor}`,
-      `   Precio unitario: ${unitPrice}`,
-      `   Subtotal: ${lineTotal}`,
+      '━━━━━━━━━━━━━━━',
+      '',
+      `🛍️ **${item.product.name}**`,
+      '',
+      `📦 **Cantidad:** ${quantityLabel}`,
+      `⚫ **Color:** ${formatColorName(item.selectedColor)}`,
+      `💰 **Precio:** ${unitPrice}`,
     ].join('\n');
   });
 
   return [
-    '*Nuevo pedido - Isa Home*',
+    '🛍️ **NUEVO PEDIDO — ISA HOME**',
     '',
-    'Hola, me gustaría realizar este pedido:',
+    '¡Hola! 👋',
+    'Me gustaría realizar el siguiente pedido:',
     '',
-    '*Productos*',
     ...lines,
     '',
-    `*Total estimado:* ${formatCurrency(totalPrice)}`,
+    '━━━━━━━━━━━━━━━',
     '',
-    'Quedo atento/a para confirmar disponibilidad, método de pago y detalles de entrega.',
-    'Gracias.',
+    '🧾 **RESUMEN DEL PEDIDO**',
+    '',
+    `**Subtotal:** ${formatCurrency(totalPrice)}`,
+    `💵 **TOTAL: ${formatCurrency(totalPrice)}**`,
+    '',
+    '━━━━━━━━━━━━━━━',
+    '',
+    '📲 Quedo atento/a para confirmar:',
+    '',
+    '✅ Disponibilidad',
+    '💳 Método de pago',
+    '🚚 Detalles de entrega',
+    '',
+    '¡Muchas gracias por elegir **Isa Home**! 🏡✨',
   ].join('\n');
 }
 
