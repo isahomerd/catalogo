@@ -1,14 +1,14 @@
 import { ArrowRight, Star, Truck, ShieldCheck, Heart } from 'lucide-react';
 import type { HomeContent, Product } from '../types';
-import { products } from '../data';
 
 interface HomePageProps {
   content: HomeContent;
+  products: Product[];
   onNavigate: (page: string) => void;
   onProductClick: (product: Product) => void;
 }
 
-export default function HomePage({ content, onNavigate, onProductClick }: HomePageProps) {
+export default function HomePage({ content, products, onNavigate, onProductClick }: HomePageProps) {
   const topProducts = [...products].sort((a, b) => b.sales - a.sales).slice(0, 5);
 
   return (
@@ -46,20 +46,32 @@ export default function HomePage({ content, onNavigate, onProductClick }: HomePa
       {/* Features */}
       <section className="max-w-7xl mx-auto px-5 sm:px-8 py-12 grid grid-cols-1 sm:grid-cols-3 gap-6">
         {[
-          { icon: Truck, title: 'Envío a toda España', desc: 'Entrega en 48-72h' },
-          { icon: ShieldCheck, title: 'Calidad garantizada', desc: 'Materiales premium' },
-          { icon: Heart, title: 'Hecho a mano', desc: 'Piezas únicas' },
+          {
+            icon: Truck,
+            title: 'Envíos en República Dominicana',
+            desc: 'Coordinamos entregas a nivel nacional',
+          },
+          {
+            icon: ShieldCheck,
+            title: 'Calidad garantizada',
+            desc: 'Materiales premium y acabados duraderos',
+          },
+          {
+            icon: Heart,
+            title: 'Selección con estilo',
+            desc: 'Piezas pensadas para hacer tu hogar especial',
+          },
         ].map((f) => (
           <div
             key={f.title}
-            className="flex items-center gap-4 p-5 rounded-xl bg-khaki_beige-800/60 border border-dry_sage-300/40"
+            className="flex items-center gap-4 p-5 rounded-xl bg-khaki_beige-800/70 border border-dry_sage-300/40 shadow-sm"
           >
-            <div className="w-11 h-11 rounded-full bg-dry_sage-200/60 flex items-center justify-center shrink-0">
-              <f.icon className="w-5 h-5 text-toffee_brown-600" />
+            <div className="w-12 h-12 rounded-full bg-charcoal_brown-500 flex items-center justify-center shrink-0 shadow-sm">
+              <f.icon className="w-5 h-5 text-khaki_beige-900" />
             </div>
             <div>
               <h3 className="font-serif text-lg text-charcoal_brown-500 leading-tight">{f.title}</h3>
-              <p className="text-sm text-ebony-600">{f.desc}</p>
+              <p className="text-sm text-ebony-700">{f.desc}</p>
             </div>
           </div>
         ))}

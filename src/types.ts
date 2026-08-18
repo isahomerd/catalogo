@@ -1,10 +1,4 @@
-export type Category =
-  | 'Cocina'
-  | 'Comedor'
-  | 'Sala'
-  | 'Dormitorio'
-  | 'Baño'
-  | 'Decoración';
+export type Category = string;
 
 export interface Product {
   id: string;
@@ -17,6 +11,12 @@ export interface Product {
   stock: number;
   sales: number;
   featured?: boolean;
+}
+
+export interface ProductCategory {
+  id: string;
+  name: string;
+  sortOrder: number;
 }
 
 export interface CartItem {

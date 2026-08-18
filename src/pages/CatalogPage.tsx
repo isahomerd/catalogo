@@ -1,13 +1,14 @@
 import { useState, useMemo } from 'react';
 import { Search, SlidersHorizontal } from 'lucide-react';
 import type { Product } from '../types';
-import { products, categories } from '../data';
 
 interface CatalogPageProps {
+  products: Product[];
+  categories: string[];
   onProductClick: (product: Product) => void;
 }
 
-export default function CatalogPage({ onProductClick }: CatalogPageProps) {
+export default function CatalogPage({ products, categories, onProductClick }: CatalogPageProps) {
   const [activeCategory, setActiveCategory] = useState<string>('Todas');
   const [search, setSearch] = useState('');
   const [sortBy, setSortBy] = useState<'sales' | 'price-asc' | 'price-desc'>('sales');

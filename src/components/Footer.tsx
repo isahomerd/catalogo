@@ -1,5 +1,5 @@
-import { Instagram, Facebook, Mail, Phone, MapPin } from 'lucide-react';
-import type { SiteContact } from '../types';
+import { Instagram, Facebook, Mail, Phone, MapPin } from "lucide-react";
+import type { SiteContact } from "../types";
 
 interface FooterProps {
   contact: SiteContact;
@@ -52,25 +52,39 @@ export default function Footer({ contact, onNavigate }: FooterProps) {
         </div>
 
         <div>
-          <h4 className="font-serif text-lg text-khaki_beige-900 mb-4">Navegación</h4>
+          <h4 className="font-serif text-lg text-khaki_beige-900 mb-4">
+            Navegación
+          </h4>
           <ul className="space-y-2 text-sm">
             <li>
-              <button onClick={() => onNavigate('home')} className="text-khaki_beige-700 hover:text-dry_sage-600 transition-colors">
+              <button
+                onClick={() => onNavigate("home")}
+                className="text-khaki_beige-700 hover:text-dry_sage-600 transition-colors"
+              >
                 Inicio
               </button>
             </li>
             <li>
-              <button onClick={() => onNavigate('catalog')} className="text-khaki_beige-700 hover:text-dry_sage-600 transition-colors">
+              <button
+                onClick={() => onNavigate("catalog")}
+                className="text-khaki_beige-700 hover:text-dry_sage-600 transition-colors"
+              >
                 Catálogo
               </button>
             </li>
             <li>
-              <button onClick={() => onNavigate('contact')} className="text-khaki_beige-700 hover:text-dry_sage-600 transition-colors">
+              <button
+                onClick={() => onNavigate("contact")}
+                className="text-khaki_beige-700 hover:text-dry_sage-600 transition-colors"
+              >
                 Contacto
               </button>
             </li>
             <li>
-              <button onClick={() => onNavigate('admin')} className="text-khaki_beige-700 hover:text-dry_sage-600 transition-colors">
+              <button
+                onClick={() => onNavigate("admin")}
+                className="text-khaki_beige-700 hover:text-dry_sage-600 transition-colors"
+              >
                 Admin
               </button>
             </li>
@@ -78,7 +92,9 @@ export default function Footer({ contact, onNavigate }: FooterProps) {
         </div>
 
         <div>
-          <h4 className="font-serif text-lg text-khaki_beige-900 mb-4">Contacto</h4>
+          <h4 className="font-serif text-lg text-khaki_beige-900 mb-4">
+            Contacto
+          </h4>
           <ul className="space-y-3 text-sm text-khaki_beige-700">
             <li className="flex items-center gap-2">
               <Phone className="w-4 h-4 shrink-0" /> {contact.phone}

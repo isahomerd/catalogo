@@ -1,9 +1,11 @@
 import { useState } from 'react';
 import {
   Package,
+  Tags,
   MessageSquare,
   Plus,
   Trash2,
+  Pencil,
   Search,
   Mail,
   Phone,
@@ -20,17 +22,55 @@ import {
   Instagram,
   Facebook,
 } from 'lucide-react';
-import type { Product, ContactMessage, HomeContent, SiteContact } from '../types';
-import { products as initialProducts, categories, defaultHomeContent } from '../data';
+import type { Product, ContactMessage, HomeContent, SiteContact, ProductCategory } from '../types';
+import { defaultHomeContent } from '../data';
 import { saveHomeContent, uploadHomeImage } from '../services/homeContent';
 import { saveSiteContact } from '../services/siteContact';
+import {
+  deleteProduct as deleteSupabaseProduct,
+  saveProduct,
+  uploadProductImage,
+} from '../services/products';
+import {
+  deleteCategory as deleteSupabaseCategory,
+  saveCategory,
+} from '../services/categories';
+
+type ProductDraft = {
+  id?: string;
+  name: string;
+  category: Product['category'];
+  price: string;
+  description: string;
+  colors: string;
+  stock: string;
+  sales: string;
+  imageUrl: string;
+  featured: boolean;
+};
+
+const emptyProductDraft: ProductDraft = {
+  name: '',
+  category: 'Cocina',
+  price: '',
+  description: '',
+  colors: '#936639',
+  stock: '',
+  sales: '0',
+  imageUrl: '',
+  featured: false,
+};
 
 interface AdminPageProps {
   messages: ContactMessage[];
   onMarkRead: (id: string) => void;
   onDeleteMessage: (id: string) => void;
-  onAddProduct: (product: Product) => void;
-  onDeleteProduct: (id: string) => void;
+  products: Product[];
+  categories: ProductCategory[];
+  onProductSaved: (product: Product) => void;
+  onProductDeleted: (id: string) => void;
+  onCategorySaved: (category: ProductCategory) => void;
+  onCategoryDeleted: (id: string) => void;
   homeContent: HomeContent;
   onHomeContentChange: (content: HomeContent) => void;
   siteContact: SiteContact;
@@ -41,34 +81,35 @@ export default function AdminPage({
   messages,
   onMarkRead,
   onDeleteMessage,
-  onAddProduct,
-  onDeleteProduct,
+  products,
+  categories: productCategories,
+  onProductSaved,
+  onProductDeleted,
+  onCategorySaved,
+  onCategoryDeleted,
   homeContent,
   onHomeContentChange,
   siteContact,
   onSiteContactChange,
 }: AdminPageProps) {
-  const [tab, setTab] = useState<'products' | 'messages' | 'home' | 'contact'>('products');
-  const [showForm, setShowForm] = useState(false);
-  const [productList, setProductList] = useState<Product[]>(initialProducts);
+  const [tab, setTab] = useState<'products' | 'categories' | 'messages' | 'home' | 'contact'>('products');
   const [search, setSearch] = useState('');
+  const [productModalOpen, setProductModalOpen] = useState(false);
+  const [productDraft, setProductDraft] = useState<ProductDraft>(emptyProductDraft);
+  const [productStatus, setProductStatus] = useState('');
+  const [savingProduct, setSavingProduct] = useState(false);
+  const [uploadingProductImage, setUploadingProductImage] = useState(false);
+  const [categoryDraft, setCategoryDraft] = useState({ id: '', name: '', sortOrder: '' });
+  const [categoryStatus, setCategoryStatus] = useState('');
+  const [savingCategory, setSavingCategory] = useState(false);
   const [homeStatus, setHomeStatus] = useState('');
   const [savingHome, setSavingHome] = useState(false);
   const [uploadingHomeImage, setUploadingHomeImage] = useState(false);
   const [contactStatus, setContactStatus] = useState('');
   const [savingContact, setSavingContact] = useState(false);
 
-  const [newProduct, setNewProduct] = useState({
-    name: '',
-    category: 'Cocina' as Product['category'],
-    price: '',
-    description: '',
-    colors: '#936639',
-    stock: '',
-    imageUrl: '',
-  });
-
   const unreadCount = messages.filter((m) => !m.read).length;
+  const categoryNames = productCategories.map((category) => category.name);
 
   const updateHomeField = (field: keyof HomeContent, value: string) => {
     onHomeContentChange({ ...homeContent, [field]: value });
@@ -134,43 +175,142 @@ export default function AdminPage({
     }
   };
 
-  const handleAdd = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!newProduct.name || !newProduct.price) return;
-    const product: Product = {
-      id: `p${Date.now()}`,
-      name: newProduct.name,
-      category: newProduct.category,
-      price: parseFloat(newProduct.price),
-      description: newProduct.description || 'Sin descripción',
-      colors: newProduct.colors.split(',').map((c) => c.trim()).filter(Boolean),
-      images: [
-        newProduct.imageUrl ||
-          'https://images.pexels.com/photos/6996077/pexels-photo-6996077.jpeg?auto=compress&cs=tinysrgb&h=650&w=940',
-      ],
-      stock: parseInt(newProduct.stock) || 0,
-      sales: 0,
-    };
-    setProductList([product, ...productList]);
-    onAddProduct(product);
-    setNewProduct({
-      name: '',
-      category: 'Cocina',
-      price: '',
-      description: '',
-      colors: '#936639',
-      stock: '',
-      imageUrl: '',
+  const openNewProductModal = () => {
+    setProductDraft({
+      ...emptyProductDraft,
+      category: categoryNames[0] || 'Cocina',
     });
-    setShowForm(false);
+    setProductStatus('');
+    setProductModalOpen(true);
   };
 
-  const handleDelete = (id: string) => {
-    setProductList(productList.filter((p) => p.id !== id));
-    onDeleteProduct(id);
+  const openEditProductModal = (product: Product) => {
+    setProductDraft({
+      id: product.id,
+      name: product.name,
+      category: product.category,
+      price: product.price.toString(),
+      description: product.description,
+      colors: product.colors.join(', '),
+      stock: product.stock.toString(),
+      sales: product.sales.toString(),
+      imageUrl: product.images[0] || '',
+      featured: Boolean(product.featured),
+    });
+    setProductStatus('');
+    setProductModalOpen(true);
   };
 
-  const filteredProducts = productList.filter((p) =>
+  const handleSaveProduct = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!productDraft.name.trim() || !productDraft.price.trim()) return;
+
+    setSavingProduct(true);
+    setProductStatus('');
+    try {
+      const savedProduct = await saveProduct({
+        id: productDraft.id,
+        name: productDraft.name.trim(),
+        category: productDraft.category,
+        price: Number(productDraft.price),
+        description: productDraft.description.trim() || 'Sin descripción',
+        colors: productDraft.colors.split(',').map((c) => c.trim()).filter(Boolean),
+        images: productDraft.imageUrl ? [productDraft.imageUrl] : [],
+        stock: Number(productDraft.stock) || 0,
+        sales: Number(productDraft.sales) || 0,
+        featured: productDraft.featured,
+      });
+
+      onProductSaved(savedProduct);
+      setProductStatus('Producto guardado en Supabase.');
+      setProductModalOpen(false);
+    } catch (error) {
+      console.error(error);
+      setProductStatus('No se pudo guardar el producto.');
+    } finally {
+      setSavingProduct(false);
+    }
+  };
+
+  const handleProductImageSelect = async (file: File | undefined) => {
+    if (!file) return;
+
+    setUploadingProductImage(true);
+    setProductStatus('');
+    try {
+      const uploaded = await uploadProductImage(file);
+      setProductDraft((prev) => ({ ...prev, imageUrl: uploaded.publicUrl }));
+      setProductStatus(`Imagen subida a Storage: ${uploaded.path}`);
+    } catch (error) {
+      console.error(error);
+      setProductStatus('No se pudo subir la imagen.');
+    } finally {
+      setUploadingProductImage(false);
+    }
+  };
+
+  const handleDeleteProduct = async (id: string) => {
+    setProductStatus('');
+    try {
+      await deleteSupabaseProduct(id);
+      onProductDeleted(id);
+    } catch (error) {
+      console.error(error);
+      setProductStatus('No se pudo eliminar el producto.');
+    }
+  };
+
+  const startEditCategory = (category: ProductCategory) => {
+    setCategoryDraft({
+      id: category.id,
+      name: category.name,
+      sortOrder: category.sortOrder.toString(),
+    });
+    setCategoryStatus('');
+  };
+
+  const resetCategoryDraft = () => {
+    setCategoryDraft({ id: '', name: '', sortOrder: '' });
+    setCategoryStatus('');
+  };
+
+  const handleSaveCategory = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!categoryDraft.name.trim()) return;
+
+    setSavingCategory(true);
+    setCategoryStatus('');
+    try {
+      const savedCategory = await saveCategory({
+        id: categoryDraft.id || undefined,
+        name: categoryDraft.name,
+        sortOrder:
+          Number(categoryDraft.sortOrder) ||
+          (productCategories.length + 1) * 10,
+      });
+      onCategorySaved(savedCategory);
+      setCategoryDraft({ id: '', name: '', sortOrder: '' });
+      setCategoryStatus('Categoría guardada en Supabase.');
+    } catch (error) {
+      console.error(error);
+      setCategoryStatus('No se pudo guardar la categoría.');
+    } finally {
+      setSavingCategory(false);
+    }
+  };
+
+  const handleDeleteCategory = async (categoryId: string) => {
+    setCategoryStatus('');
+    try {
+      await deleteSupabaseCategory(categoryId);
+      onCategoryDeleted(categoryId);
+    } catch (error) {
+      console.error(error);
+      setCategoryStatus('No se pudo eliminar la categoría.');
+    }
+  };
+
+  const filteredProducts = products.filter((p) =>
     p.name.toLowerCase().includes(search.toLowerCase())
   );
 
@@ -210,7 +350,18 @@ export default function AdminPage({
             }`}
           >
             <Package className="w-4 h-4" />
-            Productos ({productList.length})
+            Productos ({products.length})
+          </button>
+          <button
+            onClick={() => setTab('categories')}
+            className={`flex items-center gap-2 px-5 py-3 text-sm font-medium border-b-2 transition-colors -mb-px ${
+              tab === 'categories'
+                ? 'border-toffee_brown-500 text-charcoal_brown-500'
+                : 'border-transparent text-ebony-500 hover:text-charcoal_brown-500'
+            }`}
+          >
+            <Tags className="w-4 h-4" />
+            Categorías ({productCategories.length})
           </button>
           <button
             onClick={() => setTab('home')}
@@ -268,101 +419,16 @@ export default function AdminPage({
               />
             </div>
             <button
-              onClick={() => setShowForm(!showForm)}
+              onClick={openNewProductModal}
               className="inline-flex items-center gap-2 bg-charcoal_brown-500 text-khaki_beige-900 px-5 py-2.5 rounded-full text-sm font-medium hover:bg-charcoal_brown-400 transition-colors"
             >
-              {showForm ? <X className="w-4 h-4" /> : <Plus className="w-4 h-4" />}
-              {showForm ? 'Cancelar' : 'Nuevo Producto'}
+              <Plus className="w-4 h-4" />
+              Nuevo Producto
             </button>
           </div>
 
-          {showForm && (
-            <form
-              onSubmit={handleAdd}
-              className="bg-khaki_beige-800/60 border border-dry_sage-300/40 rounded-2xl p-6 mb-6 grid sm:grid-cols-2 gap-4 animate-slide-up"
-            >
-              <div>
-                <label className="text-xs uppercase tracking-widest text-ebony-500 mb-1.5 block">Nombre *</label>
-                <input
-                  type="text"
-                  value={newProduct.name}
-                  onChange={(e) => setNewProduct({ ...newProduct, name: e.target.value })}
-                  className="w-full px-4 py-2.5 text-sm bg-khaki_beige-900/70 border border-dry_sage-300/50 rounded-lg focus:outline-none focus:border-toffee_brown-500 text-charcoal_brown-500"
-                  placeholder="Nombre del producto"
-                />
-              </div>
-              <div>
-                <label className="text-xs uppercase tracking-widest text-ebony-500 mb-1.5 block">Categoría</label>
-                <select
-                  value={newProduct.category}
-                  onChange={(e) => setNewProduct({ ...newProduct, category: e.target.value as Product['category'] })}
-                  className="w-full px-4 py-2.5 text-sm bg-khaki_beige-900/70 border border-dry_sage-300/50 rounded-lg focus:outline-none focus:border-toffee_brown-500 text-charcoal_brown-500"
-                >
-                  {categories.map((c) => (
-                    <option key={c} value={c}>{c}</option>
-                  ))}
-                </select>
-              </div>
-              <div>
-                <label className="text-xs uppercase tracking-widest text-ebony-500 mb-1.5 block">Precio (€) *</label>
-                <input
-                  type="number"
-                  step="0.01"
-                  value={newProduct.price}
-                  onChange={(e) => setNewProduct({ ...newProduct, price: e.target.value })}
-                  className="w-full px-4 py-2.5 text-sm bg-khaki_beige-900/70 border border-dry_sage-300/50 rounded-lg focus:outline-none focus:border-toffee_brown-500 text-charcoal_brown-500"
-                  placeholder="0.00"
-                />
-              </div>
-              <div>
-                <label className="text-xs uppercase tracking-widest text-ebony-500 mb-1.5 block">Stock</label>
-                <input
-                  type="number"
-                  value={newProduct.stock}
-                  onChange={(e) => setNewProduct({ ...newProduct, stock: e.target.value })}
-                  className="w-full px-4 py-2.5 text-sm bg-khaki_beige-900/70 border border-dry_sage-300/50 rounded-lg focus:outline-none focus:border-toffee_brown-500 text-charcoal_brown-500"
-                  placeholder="0"
-                />
-              </div>
-              <div className="sm:col-span-2">
-                <label className="text-xs uppercase tracking-widest text-ebony-500 mb-1.5 block">Descripción</label>
-                <textarea
-                  value={newProduct.description}
-                  onChange={(e) => setNewProduct({ ...newProduct, description: e.target.value })}
-                  rows={2}
-                  className="w-full px-4 py-2.5 text-sm bg-khaki_beige-900/70 border border-dry_sage-300/50 rounded-lg focus:outline-none focus:border-toffee_brown-500 text-charcoal_brown-500 resize-none"
-                  placeholder="Descripción del producto"
-                />
-              </div>
-              <div>
-                <label className="text-xs uppercase tracking-widest text-ebony-500 mb-1.5 block">Colores (separados por coma)</label>
-                <input
-                  type="text"
-                  value={newProduct.colors}
-                  onChange={(e) => setNewProduct({ ...newProduct, colors: e.target.value })}
-                  className="w-full px-4 py-2.5 text-sm bg-khaki_beige-900/70 border border-dry_sage-300/50 rounded-lg focus:outline-none focus:border-toffee_brown-500 text-charcoal_brown-500"
-                  placeholder="#936639, #b6ad90"
-                />
-              </div>
-              <div>
-                <label className="text-xs uppercase tracking-widest text-ebony-500 mb-1.5 block">URL de imagen</label>
-                <input
-                  type="text"
-                  value={newProduct.imageUrl}
-                  onChange={(e) => setNewProduct({ ...newProduct, imageUrl: e.target.value })}
-                  className="w-full px-4 py-2.5 text-sm bg-khaki_beige-900/70 border border-dry_sage-300/50 rounded-lg focus:outline-none focus:border-toffee_brown-500 text-charcoal_brown-500"
-                  placeholder="https://..."
-                />
-              </div>
-              <div className="sm:col-span-2">
-                <button
-                  type="submit"
-                  className="inline-flex items-center gap-2 bg-toffee_brown-500 text-white px-6 py-2.5 rounded-full text-sm font-medium hover:bg-toffee_brown-600 transition-colors"
-                >
-                  <Check className="w-4 h-4" /> Guardar producto
-                </button>
-              </div>
-            </form>
+          {productStatus && !productModalOpen && (
+            <p className="text-sm text-ebony-600 mb-4">{productStatus}</p>
           )}
 
           <div className="overflow-x-auto rounded-2xl border border-dry_sage-300/40">
@@ -391,17 +457,135 @@ export default function AdminPage({
                     <td className="px-5 py-3 text-ebony-600 hidden md:table-cell">{p.stock}</td>
                     <td className="px-5 py-3 text-ebony-600 hidden md:table-cell">{p.sales}</td>
                     <td className="px-5 py-3 text-right">
-                      <button
-                        onClick={() => handleDelete(p.id)}
-                        className="p-2 text-ebony-400 hover:text-toffee_brown-600 transition-colors"
-                      >
-                        <Trash2 className="w-4 h-4" />
-                      </button>
+                      <div className="flex justify-end gap-1">
+                        <button
+                          onClick={() => openEditProductModal(p)}
+                          className="p-2 text-ebony-400 hover:text-charcoal_brown-500 transition-colors"
+                          title="Editar"
+                        >
+                          <Pencil className="w-4 h-4" />
+                        </button>
+                        <button
+                          onClick={() => handleDeleteProduct(p.id)}
+                          className="p-2 text-ebony-400 hover:text-toffee_brown-600 transition-colors"
+                          title="Eliminar"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+                      </div>
                     </td>
                   </tr>
                 ))}
               </tbody>
             </table>
+          </div>
+        </section>
+      )}
+
+      {/* Categories Tab */}
+      {tab === 'categories' && (
+        <section className="max-w-7xl mx-auto px-5 sm:px-8 py-8">
+          <div className="grid lg:grid-cols-5 gap-8 items-start">
+            <form
+              onSubmit={handleSaveCategory}
+              className="lg:col-span-2 space-y-5 bg-khaki_beige-800/60 border border-dry_sage-300/40 rounded-2xl p-6"
+            >
+              <div>
+                <h2 className="font-serif text-2xl text-charcoal_brown-500">
+                  {categoryDraft.id ? 'Editar categoría' : 'Nueva categoría'}
+                </h2>
+                <p className="text-sm text-ebony-500 mt-1">
+                  Estas opciones aparecen al crear productos.
+                </p>
+              </div>
+              <div>
+                <label className="text-xs uppercase tracking-widest text-ebony-500 mb-1.5 block">
+                  Nombre
+                </label>
+                <input
+                  type="text"
+                  value={categoryDraft.name}
+                  onChange={(e) => setCategoryDraft({ ...categoryDraft, name: e.target.value })}
+                  className="w-full px-4 py-2.5 text-sm bg-khaki_beige-900/70 border border-dry_sage-300/50 rounded-lg focus:outline-none focus:border-toffee_brown-500 text-charcoal_brown-500"
+                  placeholder="Ej. Iluminación"
+                />
+              </div>
+              <div>
+                <label className="text-xs uppercase tracking-widest text-ebony-500 mb-1.5 block">
+                  Orden
+                </label>
+                <input
+                  type="number"
+                  value={categoryDraft.sortOrder}
+                  onChange={(e) => setCategoryDraft({ ...categoryDraft, sortOrder: e.target.value })}
+                  className="w-full px-4 py-2.5 text-sm bg-khaki_beige-900/70 border border-dry_sage-300/50 rounded-lg focus:outline-none focus:border-toffee_brown-500 text-charcoal_brown-500"
+                  placeholder={`${(productCategories.length + 1) * 10}`}
+                />
+              </div>
+              <div className="flex flex-col sm:flex-row gap-3">
+                <button
+                  type="submit"
+                  disabled={savingCategory}
+                  className="inline-flex items-center justify-center gap-2 bg-charcoal_brown-500 text-khaki_beige-900 px-6 py-3 rounded-full text-sm font-medium hover:bg-charcoal_brown-400 transition-colors disabled:opacity-60"
+                >
+                  <Save className="w-4 h-4" />
+                  {savingCategory ? 'Guardando...' : 'Guardar categoría'}
+                </button>
+                {categoryDraft.id && (
+                  <button
+                    type="button"
+                    onClick={resetCategoryDraft}
+                    className="inline-flex items-center justify-center gap-2 border border-dry_sage-300/60 text-charcoal_brown-500 px-6 py-3 rounded-full text-sm font-medium hover:bg-dry_sage-200/40 transition-colors"
+                  >
+                    <X className="w-4 h-4" />
+                    Cancelar
+                  </button>
+                )}
+              </div>
+              {categoryStatus && (
+                <p className="text-sm text-ebony-600">{categoryStatus}</p>
+              )}
+            </form>
+
+            <div className="lg:col-span-3 overflow-x-auto rounded-2xl border border-dry_sage-300/40">
+              <table className="w-full text-sm">
+                <thead className="bg-khaki_beige-800/60 text-ebony-500 text-xs uppercase tracking-widest">
+                  <tr>
+                    <th className="text-left px-5 py-3 font-medium">Categoría</th>
+                    <th className="text-left px-5 py-3 font-medium">Orden</th>
+                    <th className="px-5 py-3"></th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-dry_sage-300/30">
+                  {productCategories.map((category) => (
+                    <tr key={category.id} className="hover:bg-khaki_beige-800/40 transition-colors">
+                      <td className="px-5 py-3 text-charcoal_brown-500 font-medium">
+                        {category.name}
+                      </td>
+                      <td className="px-5 py-3 text-ebony-600">{category.sortOrder}</td>
+                      <td className="px-5 py-3 text-right">
+                        <div className="flex justify-end gap-1">
+                          <button
+                            onClick={() => startEditCategory(category)}
+                            className="p-2 text-ebony-400 hover:text-charcoal_brown-500 transition-colors"
+                            title="Editar"
+                          >
+                            <Pencil className="w-4 h-4" />
+                          </button>
+                          <button
+                            onClick={() => handleDeleteCategory(category.id)}
+                            className="p-2 text-ebony-400 hover:text-toffee_brown-600 transition-colors"
+                            title="Eliminar"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
           </div>
         </section>
       )}
@@ -809,6 +993,213 @@ export default function AdminPage({
             </div>
           )}
         </section>
+      )}
+
+      {productModalOpen && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-charcoal_brown-500/50 p-4 backdrop-blur-sm animate-fade-in"
+          onClick={() => setProductModalOpen(false)}
+        >
+          <form
+            onSubmit={handleSaveProduct}
+            className="w-full max-w-3xl max-h-[92vh] overflow-y-auto rounded-2xl bg-khaki_beige-900 shadow-2xl"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="sticky top-0 z-10 flex items-center justify-between border-b border-dry_sage-300/40 bg-khaki_beige-900 px-6 py-5">
+              <div>
+                <h2 className="font-serif text-2xl text-charcoal_brown-500">
+                  {productDraft.id ? 'Editar producto' : 'Nuevo producto'}
+                </h2>
+                <p className="text-sm text-ebony-500">
+                  La información se guarda en Supabase.
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setProductModalOpen(false)}
+                className="w-9 h-9 rounded-full hover:bg-dry_sage-200/60 transition-colors flex items-center justify-center"
+                aria-label="Cerrar"
+              >
+                <X className="w-5 h-5 text-charcoal_brown-500" />
+              </button>
+            </div>
+
+            <div className="grid sm:grid-cols-2 gap-5 p-6">
+              <div>
+                <label className="text-xs uppercase tracking-widest text-ebony-500 mb-1.5 block">
+                  Nombre *
+                </label>
+                <input
+                  type="text"
+                  value={productDraft.name}
+                  onChange={(e) => setProductDraft({ ...productDraft, name: e.target.value })}
+                  className="w-full px-4 py-2.5 text-sm bg-khaki_beige-800/70 border border-dry_sage-300/50 rounded-lg focus:outline-none focus:border-toffee_brown-500 text-charcoal_brown-500"
+                  placeholder="Nombre del producto"
+                />
+              </div>
+
+              <div>
+                <label className="text-xs uppercase tracking-widest text-ebony-500 mb-1.5 block">
+                  Categoría
+                </label>
+                <select
+                  value={productDraft.category}
+                  onChange={(e) => setProductDraft({ ...productDraft, category: e.target.value })}
+                  className="w-full px-4 py-2.5 text-sm bg-khaki_beige-800/70 border border-dry_sage-300/50 rounded-lg focus:outline-none focus:border-toffee_brown-500 text-charcoal_brown-500"
+                >
+                  {categoryNames.map((category) => (
+                    <option key={category} value={category}>
+                      {category}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div>
+                <label className="text-xs uppercase tracking-widest text-ebony-500 mb-1.5 block">
+                  Precio
+                </label>
+                <input
+                  type="number"
+                  step="0.01"
+                  value={productDraft.price}
+                  onChange={(e) => setProductDraft({ ...productDraft, price: e.target.value })}
+                  className="w-full px-4 py-2.5 text-sm bg-khaki_beige-800/70 border border-dry_sage-300/50 rounded-lg focus:outline-none focus:border-toffee_brown-500 text-charcoal_brown-500"
+                  placeholder="0.00"
+                />
+              </div>
+
+              <div>
+                <label className="text-xs uppercase tracking-widest text-ebony-500 mb-1.5 block">
+                  Stock
+                </label>
+                <input
+                  type="number"
+                  value={productDraft.stock}
+                  onChange={(e) => setProductDraft({ ...productDraft, stock: e.target.value })}
+                  className="w-full px-4 py-2.5 text-sm bg-khaki_beige-800/70 border border-dry_sage-300/50 rounded-lg focus:outline-none focus:border-toffee_brown-500 text-charcoal_brown-500"
+                  placeholder="0"
+                />
+              </div>
+
+              <div>
+                <label className="text-xs uppercase tracking-widest text-ebony-500 mb-1.5 block">
+                  Ventas
+                </label>
+                <input
+                  type="number"
+                  value={productDraft.sales}
+                  onChange={(e) => setProductDraft({ ...productDraft, sales: e.target.value })}
+                  className="w-full px-4 py-2.5 text-sm bg-khaki_beige-800/70 border border-dry_sage-300/50 rounded-lg focus:outline-none focus:border-toffee_brown-500 text-charcoal_brown-500"
+                  placeholder="0"
+                />
+              </div>
+
+              <label className="flex items-center gap-3 rounded-lg border border-dry_sage-300/50 bg-khaki_beige-800/70 px-4 py-2.5">
+                <input
+                  type="checkbox"
+                  checked={productDraft.featured}
+                  onChange={(e) => setProductDraft({ ...productDraft, featured: e.target.checked })}
+                  className="h-4 w-4 accent-toffee_brown-500"
+                />
+                <span className="text-sm text-charcoal_brown-500">Producto destacado</span>
+              </label>
+
+              <div className="sm:col-span-2">
+                <label className="text-xs uppercase tracking-widest text-ebony-500 mb-1.5 block">
+                  Descripción
+                </label>
+                <textarea
+                  value={productDraft.description}
+                  onChange={(e) => setProductDraft({ ...productDraft, description: e.target.value })}
+                  rows={4}
+                  className="w-full px-4 py-2.5 text-sm bg-khaki_beige-800/70 border border-dry_sage-300/50 rounded-lg focus:outline-none focus:border-toffee_brown-500 text-charcoal_brown-500 resize-none"
+                  placeholder="Descripción del producto"
+                />
+              </div>
+
+              <div>
+                <label className="text-xs uppercase tracking-widest text-ebony-500 mb-1.5 block">
+                  Colores
+                </label>
+                <input
+                  type="text"
+                  value={productDraft.colors}
+                  onChange={(e) => setProductDraft({ ...productDraft, colors: e.target.value })}
+                  className="w-full px-4 py-2.5 text-sm bg-khaki_beige-800/70 border border-dry_sage-300/50 rounded-lg focus:outline-none focus:border-toffee_brown-500 text-charcoal_brown-500"
+                  placeholder="#936639, #b6ad90"
+                />
+              </div>
+
+              <div>
+                <label className="text-xs uppercase tracking-widest text-ebony-500 mb-1.5 block">
+                  URL de imagen
+                </label>
+                <input
+                  type="url"
+                  value={productDraft.imageUrl}
+                  onChange={(e) => setProductDraft({ ...productDraft, imageUrl: e.target.value })}
+                  className="w-full px-4 py-2.5 text-sm bg-khaki_beige-800/70 border border-dry_sage-300/50 rounded-lg focus:outline-none focus:border-toffee_brown-500 text-charcoal_brown-500"
+                  placeholder="https://..."
+                />
+              </div>
+
+              <div className="sm:col-span-2 grid sm:grid-cols-[180px_1fr] gap-4 items-stretch">
+                <div className="aspect-square overflow-hidden rounded-xl bg-dry_sage-200/40">
+                  {productDraft.imageUrl ? (
+                    <img
+                      src={productDraft.imageUrl}
+                      alt=""
+                      className="w-full h-full object-cover"
+                    />
+                  ) : (
+                    <div className="w-full h-full flex items-center justify-center text-ebony-400">
+                      <Image className="w-8 h-8" strokeWidth={1.5} />
+                    </div>
+                  )}
+                </div>
+                <label className="flex min-h-40 cursor-pointer flex-col items-center justify-center rounded-xl border border-dashed border-dry_sage-400/60 bg-khaki_beige-800/70 px-4 py-5 text-center transition-colors hover:bg-dry_sage-200/30">
+                  <UploadCloud className="w-7 h-7 text-toffee_brown-600 mb-2" strokeWidth={1.5} />
+                  <span className="text-sm font-medium text-charcoal_brown-500">
+                    {uploadingProductImage ? 'Subiendo imagen...' : 'Seleccionar imagen desde tu desktop'}
+                  </span>
+                  <span className="text-xs text-ebony-500 mt-1">
+                    Se guardará en isahome/ISAHOME/products/
+                  </span>
+                  <input
+                    type="file"
+                    accept="image/jpeg,image/png,image/webp,image/gif"
+                    className="sr-only"
+                    disabled={uploadingProductImage}
+                    onChange={(e) => handleProductImageSelect(e.target.files?.[0])}
+                  />
+                </label>
+              </div>
+
+              {productStatus && (
+                <p className="sm:col-span-2 text-sm text-ebony-600">{productStatus}</p>
+              )}
+            </div>
+
+            <div className="sticky bottom-0 flex justify-end gap-3 border-t border-dry_sage-300/40 bg-khaki_beige-900 px-6 py-5">
+              <button
+                type="button"
+                onClick={() => setProductModalOpen(false)}
+                className="inline-flex items-center justify-center gap-2 border border-dry_sage-300/60 text-charcoal_brown-500 px-6 py-3 rounded-full text-sm font-medium hover:bg-dry_sage-200/40 transition-colors"
+              >
+                Cancelar
+              </button>
+              <button
+                type="submit"
+                disabled={savingProduct || uploadingProductImage}
+                className="inline-flex items-center justify-center gap-2 bg-charcoal_brown-500 text-khaki_beige-900 px-6 py-3 rounded-full text-sm font-medium hover:bg-charcoal_brown-400 transition-colors disabled:opacity-60"
+              >
+                <Save className="w-4 h-4" />
+                {savingProduct ? 'Guardando...' : 'Guardar producto'}
+              </button>
+            </div>
+          </form>
+        </div>
       )}
     </div>
   );
