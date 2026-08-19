@@ -12,7 +12,6 @@ import {
   categories as defaultCategoryNames,
   defaultHomeContent,
   defaultSiteContact,
-  initialMessages,
   products as defaultProducts,
 } from './data';
 import type { Product, ContactMessage, HomeContent, SiteContact, ProductCategory } from './types';
@@ -20,6 +19,12 @@ import { fetchHomeContent } from './services/homeContent';
 import { fetchSiteContact } from './services/siteContact';
 import { fetchProducts } from './services/products';
 import { fetchCategories } from './services/categories';
+import {
+  createContactMessage,
+  deleteContactMessage,
+  fetchContactMessages,
+  markContactMessageRead,
+} from './services/contactMessages';
 
 function App() {
   const [page, setPage] = useState('home');
@@ -32,7 +37,7 @@ function App() {
       sortOrder: (index + 1) * 10,
     }))
   );
-  const [messages, setMessages] = useState<ContactMessage[]>(initialMessages);
+  const [messages, setMessages] = useState<ContactMessage[]>([]);
   const [homeContent, setHomeContent] = useState<HomeContent>(defaultHomeContent);
   const [siteContact, setSiteContact] = useState<SiteContact>(defaultSiteContact);
 
@@ -91,6 +96,22 @@ function App() {
   useEffect(() => {
     let ignore = false;
 
+    fetchContactMessages()
+      .then((remoteMessages) => {
+        if (!ignore && remoteMessages) setMessages(remoteMessages);
+      })
+      .catch((error) => {
+        console.error('No se pudieron cargar los mensajes:', error);
+      });
+
+    return () => {
+      ignore = true;
+    };
+  }, []);
+
+  useEffect(() => {
+    let ignore = false;
+
     fetchSiteContact()
       .then((contact) => {
         if (!ignore && contact) setSiteContact(contact);
@@ -109,32 +130,34 @@ function App() {
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
-  const handleMessageSent = (msg: {
+  const handleMessageSent = async (msg: {
     name: string;
     email: string;
     phone: string;
     message: string;
   }) => {
-    const newMsg: ContactMessage = {
-      id: `m${Date.now()}`,
-      name: msg.name,
-      email: msg.email,
-      phone: msg.phone,
-      message: msg.message,
-      date: new Date().toISOString(),
-      read: false,
-    };
+    const newMsg = await createContactMessage(msg);
     setMessages((prev) => [newMsg, ...prev]);
   };
 
-  const markRead = (id: string) => {
-    setMessages((prev) =>
-      prev.map((m) => (m.id === id ? { ...m, read: true } : m))
-    );
+  const markRead = async (id: string) => {
+    try {
+      const updated = await markContactMessageRead(id);
+      setMessages((prev) =>
+        prev.map((m) => (m.id === id ? updated : m))
+      );
+    } catch (error) {
+      console.error('No se pudo marcar el mensaje como leído:', error);
+    }
   };
 
-  const deleteMessage = (id: string) => {
-    setMessages((prev) => prev.filter((m) => m.id !== id));
+  const deleteMessage = async (id: string) => {
+    try {
+      await deleteContactMessage(id);
+      setMessages((prev) => prev.filter((m) => m.id !== id));
+    } catch (error) {
+      console.error('No se pudo eliminar el mensaje:', error);
+    }
   };
 
   const upsertProduct = (product: Product) => {

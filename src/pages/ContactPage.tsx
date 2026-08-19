@@ -11,16 +11,39 @@ interface ContactPageProps {
     email: string;
     phone: string;
     message: string;
-  }) => void;
+  }) => Promise<void>;
 }
 
 export default function ContactPage({ contact, onMessageSent }: ContactPageProps) {
   const { items, totalPrice, clearCart } = useCart();
   const [form, setForm] = useState({ name: '', email: '', phone: '', message: '' });
   const [sent, setSent] = useState(false);
+  const [sending, setSending] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
 
   const hasCartItems = items.length > 0;
+
+  const buildContactMessage = () => {
+    if (!hasCartItems) return form.message;
+
+    const cartLines = items.map((item) =>
+      [
+        `- ${item.product.name}`,
+        `  Cantidad: ${item.quantity}`,
+        `  Color: ${item.selectedColor}`,
+        `  Subtotal: ${formatCurrency(item.product.price * item.quantity)}`,
+      ].join('\n')
+    );
+
+    return [
+      form.message.trim(),
+      '',
+      'Pedido desde el carrito:',
+      ...cartLines,
+      '',
+      `Total: ${formatCurrency(totalPrice)}`,
+    ].join('\n');
+  };
 
   const validate = () => {
     const e: Record<string, string> = {};
@@ -32,14 +55,26 @@ export default function ContactPage({ contact, onMessageSent }: ContactPageProps
     return Object.keys(e).length === 0;
   };
 
-  const handleSubmit = (ev: React.FormEvent) => {
+  const handleSubmit = async (ev: React.FormEvent) => {
     ev.preventDefault();
     if (!validate()) return;
-    onMessageSent(form);
-    setSent(true);
-    setForm({ name: '', email: '', phone: '', message: '' });
-    clearCart();
-    setTimeout(() => setSent(false), 5000);
+
+    setSending(true);
+    try {
+      await onMessageSent({
+        ...form,
+        message: buildContactMessage(),
+      });
+      setSent(true);
+      setForm({ name: '', email: '', phone: '', message: '' });
+      clearCart();
+      setTimeout(() => setSent(false), 5000);
+    } catch (error) {
+      console.error(error);
+      setErrors({ submit: 'No se pudo enviar el mensaje. Inténtalo de nuevo.' });
+    } finally {
+      setSending(false);
+    }
   };
 
   return (
@@ -123,6 +158,11 @@ export default function ContactPage({ contact, onMessageSent }: ContactPageProps
                 </p>
               </div>
             )}
+            {errors.submit && (
+              <div className="p-4 rounded-xl bg-toffee_brown-500/10 border border-toffee_brown-500/25">
+                <p className="text-sm text-toffee_brown-700">{errors.submit}</p>
+              </div>
+            )}
 
             <div className="grid sm:grid-cols-2 gap-5">
               <div>
@@ -188,10 +228,11 @@ export default function ContactPage({ contact, onMessageSent }: ContactPageProps
 
             <button
               type="submit"
-              className="w-full sm:w-auto inline-flex items-center justify-center gap-2 bg-charcoal_brown-500 text-khaki_beige-900 px-7 py-3.5 rounded-full text-sm tracking-wide font-medium hover:bg-charcoal_brown-400 transition-colors"
+              disabled={sending}
+              className="w-full sm:w-auto inline-flex items-center justify-center gap-2 bg-charcoal_brown-500 text-khaki_beige-900 px-7 py-3.5 rounded-full text-sm tracking-wide font-medium hover:bg-charcoal_brown-400 transition-colors disabled:opacity-60"
             >
               <Send className="w-4 h-4" />
-              {hasCartItems ? 'Enviar Pedido' : 'Enviar Mensaje'}
+              {sending ? 'Enviando...' : hasCartItems ? 'Enviar Pedido' : 'Enviar Mensaje'}
             </button>
           </form>
         </div>

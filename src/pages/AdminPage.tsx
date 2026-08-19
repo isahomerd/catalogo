@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import {
   Package,
   Tags,
@@ -21,6 +21,9 @@ import {
   MapPin,
   Instagram,
   Facebook,
+  Lock,
+  LogOut,
+  User,
 } from 'lucide-react';
 import type { Product, ContactMessage, HomeContent, SiteContact, ProductCategory } from '../types';
 import { defaultHomeContent } from '../data';
@@ -61,6 +64,10 @@ const emptyProductDraft: ProductDraft = {
   imageUrl: '',
   featured: false,
 };
+
+const ADMIN_USER_HASH = '20f54394c987c8634403365241fc28f96abff65cf1fcb04c294806852394029a';
+const ADMIN_PASS_HASH = '66e2b63c38c52adffda4aff9a1722665fa664cd38315f001d29392c489e4d1fd';
+const ADMIN_SESSION_KEY = 'isahome-admin-session';
 
 interface AdminPageProps {
   messages: ContactMessage[];
@@ -108,9 +115,61 @@ export default function AdminPage({
   const [uploadingHomeImage, setUploadingHomeImage] = useState(false);
   const [contactStatus, setContactStatus] = useState('');
   const [savingContact, setSavingContact] = useState(false);
+  const [adminSession, setAdminSession] = useState(() => localStorage.getItem(ADMIN_SESSION_KEY) === 'active');
+  const [loginDraft, setLoginDraft] = useState({ username: '', password: '' });
+  const [loginStatus, setLoginStatus] = useState('');
+  const [checkingLogin, setCheckingLogin] = useState(false);
 
   const unreadCount = messages.filter((m) => !m.read).length;
   const categoryNames = productCategories.map((category) => category.name);
+
+  useEffect(() => {
+    if (adminSession) {
+      localStorage.setItem(ADMIN_SESSION_KEY, 'active');
+    } else {
+      localStorage.removeItem(ADMIN_SESSION_KEY);
+    }
+  }, [adminSession]);
+
+  const hashText = async (value: string) => {
+    const encoded = new TextEncoder().encode(value);
+    const digest = await crypto.subtle.digest('SHA-256', encoded);
+    return Array.from(new Uint8Array(digest))
+      .map((byte) => byte.toString(16).padStart(2, '0'))
+      .join('');
+  };
+
+  const handleAdminLogin = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setCheckingLogin(true);
+    setLoginStatus('');
+
+    try {
+      const [userHash, passHash] = await Promise.all([
+        hashText(loginDraft.username.trim().toLowerCase()),
+        hashText(loginDraft.password),
+      ]);
+
+      if (userHash === ADMIN_USER_HASH && passHash === ADMIN_PASS_HASH) {
+        setAdminSession(true);
+        setLoginDraft({ username: '', password: '' });
+        return;
+      }
+
+      setLoginStatus('Usuario o contraseña incorrectos.');
+    } catch (error) {
+      console.error(error);
+      setLoginStatus('No se pudo validar el acceso.');
+    } finally {
+      setCheckingLogin(false);
+    }
+  };
+
+  const handleAdminLogout = () => {
+    setAdminSession(false);
+    setLoginDraft({ username: '', password: '' });
+    setLoginStatus('');
+  };
 
   const updateHomeField = (field: keyof HomeContent, value: string) => {
     onHomeContentChange({ ...homeContent, [field]: value });
@@ -325,26 +384,125 @@ export default function AdminPage({
     });
   };
 
+  if (!adminSession) {
+    return (
+      <div className="min-h-[calc(100vh-180px)] bg-khaki_beige-900 px-5 py-10 sm:px-8 sm:py-16 animate-fade-in">
+        <div className="mx-auto grid max-w-5xl overflow-hidden rounded-2xl border border-dry_sage-300/40 bg-khaki_beige-800/60 shadow-xl md:grid-cols-[1fr_420px]">
+          <div className="hidden bg-charcoal_brown-500 p-10 md:flex md:flex-col md:justify-between">
+            <div>
+              <span className="text-xs uppercase tracking-[0.3em] text-dry_sage-400">
+                Panel privado
+              </span>
+              <h1 className="mt-4 font-serif text-5xl leading-tight text-khaki_beige-900">
+                Gestión Isa Home
+              </h1>
+            </div>
+            <p className="max-w-sm text-sm leading-relaxed text-khaki_beige-700">
+              Accede para administrar productos, categorías, contenido del Home y datos de contacto.
+            </p>
+          </div>
+
+          <form onSubmit={handleAdminLogin} className="p-6 sm:p-8 md:p-10">
+            <div className="mb-8">
+              <div className="mb-5 flex h-12 w-12 items-center justify-center rounded-full bg-charcoal_brown-500 text-khaki_beige-900">
+                <Lock className="h-5 w-5" />
+              </div>
+              <span className="text-xs uppercase tracking-[0.25em] text-toffee_brown-600 md:hidden">
+                Panel privado
+              </span>
+              <h2 className="mt-2 font-serif text-3xl text-charcoal_brown-500 sm:text-4xl">
+                Acceso admin
+              </h2>
+              <p className="mt-2 text-sm leading-relaxed text-ebony-600">
+                Ingresa tus credenciales para continuar.
+              </p>
+            </div>
+
+            <div className="space-y-4">
+              <label className="block">
+                <span className="mb-1.5 block text-xs uppercase tracking-widest text-ebony-500">
+                  Usuario
+                </span>
+                <span className="relative block">
+                  <User className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-ebony-400" />
+                  <input
+                    type="text"
+                    value={loginDraft.username}
+                    onChange={(e) => setLoginDraft({ ...loginDraft, username: e.target.value })}
+                    className="w-full rounded-lg border border-dry_sage-300/50 bg-khaki_beige-900/80 py-3 pl-10 pr-4 text-sm text-charcoal_brown-500 outline-none transition-colors focus:border-toffee_brown-500"
+                    autoComplete="username"
+                    required
+                  />
+                </span>
+              </label>
+
+              <label className="block">
+                <span className="mb-1.5 block text-xs uppercase tracking-widest text-ebony-500">
+                  Contraseña
+                </span>
+                <span className="relative block">
+                  <Lock className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-ebony-400" />
+                  <input
+                    type="password"
+                    value={loginDraft.password}
+                    onChange={(e) => setLoginDraft({ ...loginDraft, password: e.target.value })}
+                    className="w-full rounded-lg border border-dry_sage-300/50 bg-khaki_beige-900/80 py-3 pl-10 pr-4 text-sm text-charcoal_brown-500 outline-none transition-colors focus:border-toffee_brown-500"
+                    autoComplete="current-password"
+                    required
+                  />
+                </span>
+              </label>
+
+              {loginStatus && (
+                <p className="rounded-lg bg-toffee_brown-500/10 px-4 py-3 text-sm text-toffee_brown-700">
+                  {loginStatus}
+                </p>
+              )}
+
+              <button
+                type="submit"
+                disabled={checkingLogin}
+                className="flex w-full items-center justify-center gap-2 rounded-full bg-charcoal_brown-500 px-6 py-3.5 text-sm font-medium text-khaki_beige-900 transition-colors hover:bg-charcoal_brown-400 disabled:opacity-60"
+              >
+                <Lock className="h-4 w-4" />
+                {checkingLogin ? 'Validando...' : 'Entrar al admin'}
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="animate-fade-in">
       {/* Header */}
-      <section className="bg-charcoal_brown-500 py-14">
-        <div className="max-w-7xl mx-auto px-5 sm:px-8">
-          <span className="text-xs uppercase tracking-[0.3em] text-dry_sage-400 mb-3 block">
-            Panel de administración
-          </span>
-          <h1 className="font-serif text-4xl sm:text-5xl text-khaki_beige-900">
-            Gestión Isa Home
-          </h1>
+      <section className="bg-charcoal_brown-500 py-10 sm:py-14">
+        <div className="mx-auto flex max-w-7xl flex-col gap-5 px-5 sm:px-8 md:flex-row md:items-end md:justify-between">
+          <div>
+            <span className="mb-3 block text-xs uppercase tracking-[0.25em] text-dry_sage-400 sm:tracking-[0.3em]">
+              Panel de administración
+            </span>
+            <h1 className="font-serif text-3xl text-khaki_beige-900 sm:text-5xl">
+              Gestión Isa Home
+            </h1>
+          </div>
+          <button
+            onClick={handleAdminLogout}
+            className="inline-flex w-fit items-center justify-center gap-2 rounded-full border border-khaki_beige-900/25 px-4 py-2.5 text-sm font-medium text-khaki_beige-900 transition-colors hover:bg-khaki_beige-900/10"
+          >
+            <LogOut className="h-4 w-4" />
+            Salir
+          </button>
         </div>
       </section>
 
       {/* Tabs */}
-      <section className="max-w-7xl mx-auto px-5 sm:px-8 pt-8">
-        <div className="flex gap-2 border-b border-dry_sage-300/40">
+      <section className="max-w-7xl mx-auto px-5 sm:px-8 pt-6 sm:pt-8">
+        <div className="flex gap-2 overflow-x-auto border-b border-dry_sage-300/40 pb-px scrollbar-hide">
           <button
             onClick={() => setTab('products')}
-            className={`flex items-center gap-2 px-5 py-3 text-sm font-medium border-b-2 transition-colors -mb-px ${
+            className={`flex shrink-0 items-center gap-2 px-4 py-3 text-sm font-medium border-b-2 transition-colors -mb-px sm:px-5 ${
               tab === 'products'
                 ? 'border-toffee_brown-500 text-charcoal_brown-500'
                 : 'border-transparent text-ebony-500 hover:text-charcoal_brown-500'
@@ -355,7 +513,7 @@ export default function AdminPage({
           </button>
           <button
             onClick={() => setTab('categories')}
-            className={`flex items-center gap-2 px-5 py-3 text-sm font-medium border-b-2 transition-colors -mb-px ${
+            className={`flex shrink-0 items-center gap-2 px-4 py-3 text-sm font-medium border-b-2 transition-colors -mb-px sm:px-5 ${
               tab === 'categories'
                 ? 'border-toffee_brown-500 text-charcoal_brown-500'
                 : 'border-transparent text-ebony-500 hover:text-charcoal_brown-500'
@@ -366,7 +524,7 @@ export default function AdminPage({
           </button>
           <button
             onClick={() => setTab('home')}
-            className={`flex items-center gap-2 px-5 py-3 text-sm font-medium border-b-2 transition-colors -mb-px ${
+            className={`flex shrink-0 items-center gap-2 px-4 py-3 text-sm font-medium border-b-2 transition-colors -mb-px sm:px-5 ${
               tab === 'home'
                 ? 'border-toffee_brown-500 text-charcoal_brown-500'
                 : 'border-transparent text-ebony-500 hover:text-charcoal_brown-500'
@@ -377,7 +535,7 @@ export default function AdminPage({
           </button>
           <button
             onClick={() => setTab('contact')}
-            className={`flex items-center gap-2 px-5 py-3 text-sm font-medium border-b-2 transition-colors -mb-px ${
+            className={`flex shrink-0 items-center gap-2 px-4 py-3 text-sm font-medium border-b-2 transition-colors -mb-px sm:px-5 ${
               tab === 'contact'
                 ? 'border-toffee_brown-500 text-charcoal_brown-500'
                 : 'border-transparent text-ebony-500 hover:text-charcoal_brown-500'
@@ -388,7 +546,7 @@ export default function AdminPage({
           </button>
           <button
             onClick={() => setTab('messages')}
-            className={`flex items-center gap-2 px-5 py-3 text-sm font-medium border-b-2 transition-colors -mb-px ${
+            className={`flex shrink-0 items-center gap-2 px-4 py-3 text-sm font-medium border-b-2 transition-colors -mb-px sm:px-5 ${
               tab === 'messages'
                 ? 'border-toffee_brown-500 text-charcoal_brown-500'
                 : 'border-transparent text-ebony-500 hover:text-charcoal_brown-500'
@@ -409,7 +567,7 @@ export default function AdminPage({
       {tab === 'products' && (
         <section className="max-w-7xl mx-auto px-5 sm:px-8 py-8">
           <div className="flex flex-col sm:flex-row gap-4 justify-between mb-6">
-            <div className="relative max-w-xs">
+            <div className="relative w-full sm:max-w-xs">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-ebony-400" />
               <input
                 type="text"
@@ -433,7 +591,7 @@ export default function AdminPage({
           )}
 
           <div className="overflow-x-auto rounded-2xl border border-dry_sage-300/40">
-            <table className="w-full text-sm">
+            <table className="w-full min-w-[680px] text-sm">
               <thead className="bg-khaki_beige-800/60 text-ebony-500 text-xs uppercase tracking-widest">
                 <tr>
                   <th className="text-left px-5 py-3 font-medium">Producto</th>
