@@ -1,4 +1,4 @@
-import { ArrowRight, Star, Truck, ShieldCheck, Heart } from 'lucide-react';
+import { ArrowRight, Truck, ShieldCheck, Heart } from 'lucide-react';
 import type { HomeContent, Product } from '../types';
 import { formatCurrency } from '../utils/format';
 
@@ -10,7 +10,10 @@ interface HomePageProps {
 }
 
 export default function HomePage({ content, products, onNavigate, onProductClick }: HomePageProps) {
-  const topProducts = [...products].sort((a, b) => b.sales - a.sales).slice(0, 5);
+  const featuredProducts = [
+    ...products.filter((product) => product.featured),
+    ...products.filter((product) => !product.featured),
+  ].slice(0, 5);
 
   return (
     <div className="animate-fade-in">
@@ -78,15 +81,15 @@ export default function HomePage({ content, products, onNavigate, onProductClick
         ))}
       </section>
 
-      {/* Most Sold */}
+      {/* Featured Products */}
       <section className="max-w-7xl mx-auto px-5 sm:px-8 py-10">
         <div className="flex items-end justify-between mb-8">
           <div>
             <span className="text-xs uppercase tracking-widest text-toffee_brown-600 mb-1 block">
-              Lo más comprado
+              Selección destacada
             </span>
             <h2 className="font-serif text-3xl sm:text-4xl text-charcoal_brown-500">
-              Favoritos de nuestros clientes
+              Piezas para tu hogar
             </h2>
           </div>
           <button
@@ -98,13 +101,11 @@ export default function HomePage({ content, products, onNavigate, onProductClick
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-          {topProducts.map((product, idx) => (
+          {featuredProducts.map((product) => (
             <button
               key={product.id}
               onClick={() => onProductClick(product)}
-              className={`group text-left rounded-2xl overflow-hidden bg-khaki_beige-800/60 border border-dry_sage-300/40 hover:shadow-lg transition-all duration-300 ${
-                idx === 0 ? 'lg:col-span-1 lg:row-span-1' : ''
-              }`}
+              className="group text-left rounded-2xl overflow-hidden bg-khaki_beige-800/60 border border-dry_sage-300/40 hover:shadow-lg transition-all duration-300"
             >
               <div className="relative aspect-[4/3] overflow-hidden bg-dry_sage-200/40">
                 <img
@@ -112,14 +113,6 @@ export default function HomePage({ content, products, onNavigate, onProductClick
                   alt={product.name}
                   className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
                 />
-                {idx === 0 && (
-                  <span className="absolute top-3 left-3 bg-toffee_brown-500 text-white text-xs px-3 py-1 rounded-full flex items-center gap-1">
-                    <Star className="w-3 h-3 fill-current" /> Top 1
-                  </span>
-                )}
-                <span className="absolute top-3 right-3 bg-khaki_beige-900/85 backdrop-blur text-charcoal_brown-500 text-xs px-2.5 py-1 rounded-full">
-                  {product.sales} ventas
-                </span>
               </div>
               <div className="p-5">
                 <span className="text-xs uppercase tracking-widest text-toffee_brown-600">
