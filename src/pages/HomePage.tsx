@@ -13,7 +13,7 @@ export default function HomePage({ content, products, onNavigate, onProductClick
   const featuredProducts = [
     ...products.filter((product) => product.featured),
     ...products.filter((product) => !product.featured),
-  ].slice(0, 5);
+  ].slice(0, 6);
 
   return (
     <div className="animate-fade-in">
